@@ -1,0 +1,16 @@
+{
+    "anchor": "bottom",
+    "artFull": false,
+    "discOpacity": 1,
+    "discSize": "medium",
+    "dragGain": 0.45,
+    "monitor": "",
+    "peekSide": "right",
+    "preferredPlayer": "org.mpris.MediaPlayer2.spotify",
+    "progressStyle": "ring",
+    "showArm": false,
+    "skin": "cd",
+    "spinDegreesPerSecond": 0,
+    "x": -1,
+    "y": -1
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=NowSpinning
+Comment=MPRIS vinyl/CD widget
+Exec=nowspinning
+Icon=media-optical
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=vinyl;record;cd;disc;spotify;mpris;

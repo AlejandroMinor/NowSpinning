@@ -1,0 +1,13 @@
+#!/bin/sh
+# Toggle the widget on or off.
+#
+# `qs kill -p` returns non-zero when nothing was running, so the same
+# command works in both directions.
+
+CONFIG="$HOME/.config/quickshell/nowspinning"
+
+if qs kill -p "$CONFIG" >/dev/null 2>&1; then
+    exit 0
+fi
+
+exec qs -d -p "$CONFIG"
