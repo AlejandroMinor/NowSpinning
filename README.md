@@ -8,19 +8,28 @@ It's a player *client* only: it displays and controls whatever MPRIS player is a
 
 Just for fun, really. This is for anyone who likes seeing the cover art of whatever they're currently listening to, more than it's meant to be a serious tool. Spotify's own mini player is minimal, but not something nice to look at, and that's what actually pushed this into existing: something with actual presence instead of a flat progress bar. An object with weight and motion. Grooves that catch light, a tonearm that lifts and lowers, a CD that spins inside its case, all built to be easy to extend with new skins later.
 
+## Requirements
+
+- A Wayland compositor implementing `wlr-layer-shell`. Developed on Hyprland; see Compatibility.
+- [`quickshell`](https://quickshell.org) 0.3.1 or newer. It pulls in Qt6 itself (base, declarative, wayland, svg), so there's nothing to install separately for that.
+- `qt6-5compat`, for the `Qt5Compat.GraphicalEffects` import in `parts/Sheen.qml`. Quickshell doesn't depend on it, so on a clean system it won't already be there.
+- An MPRIS-capable player. NowSpinning displays and controls whatever is already running; it doesn't play audio itself.
+
 ## Install
 
-Dependency: [`quickshell`](https://quickshell.org) (0.3.1+). Everything else (Qt6, Qt5Compat, MPRIS support) ships with it.
-
 ```sh
-sudo pacman -S --needed quickshell   # Arch; see quickshell.org for other distros
+sudo pacman -S --needed quickshell qt6-5compat
 ```
+
+That's Arch; see quickshell.org for other distros.
 
 Clone this repo, then symlink it into Quickshell's config directory:
 
 ```sh
-ln -sfn "$(pwd)/nowspinning" ~/.config/quickshell/nowspinning
+mkdir -p ~/.config/quickshell && ln -sfn "$(pwd)/nowspinning" ~/.config/quickshell/nowspinning && ls -l ~/.config/quickshell/nowspinning
 ```
+
+That last `ls` should print the link pointing back into this repo.
 
 Run it:
 
@@ -28,11 +37,11 @@ Run it:
 qs -p ~/.config/quickshell/nowspinning
 ```
 
-Or symlink the bundled toggle script (it starts the widget if it isn't running and kills it if it is, same command either way) and, optionally, its launcher entry:
+Or symlink the bundled toggle script, which starts the widget if it isn't running and kills it if it is, the same command either way. The first link makes `nowspinning` a command on your PATH, for a terminal or a Hyprland keybind. The second one is optional: it adds a desktop entry, so NowSpinning also shows up by name and icon in your application menu and in launchers like rofi or wofi.
 
 ```sh
-ln -sfn "$(pwd)/bin/nowspinning" ~/.local/bin/nowspinning
-ln -sfn "$(pwd)/desktop/nowspinning.desktop" ~/.local/share/applications/nowspinning.desktop
+mkdir -p ~/.local/bin && ln -sfn "$(pwd)/bin/nowspinning" ~/.local/bin/nowspinning
+mkdir -p ~/.local/share/applications && ln -sfn "$(pwd)/desktop/nowspinning.desktop" ~/.local/share/applications/nowspinning.desktop
 nowspinning
 ```
 
@@ -85,7 +94,15 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 
-There's no close button. Toggle it the same way you started it (`nowspinning`, or your keybind).
+There's no close button, by design. You close it the same way you opened it, since `nowspinning` is a toggle: run it again in a terminal, hit your keybind, or click NowSpinning again in your application menu or launcher, since the desktop entry runs that same command.
+
+If you started it with plain `qs` instead, or the script isn't linked, kill it directly:
+
+```sh
+qs kill -c nowspinning
+```
+
+`qs list --all` shows what's running, and `qs kill` also takes `-i <instance id>` or `--pid <pid>`.
 
 ## Compatibility
 
