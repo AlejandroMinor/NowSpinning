@@ -526,9 +526,14 @@ ShellRoot {
             target: null
             property point grab
 
+            // Last position the pointer reported. The window is moved from
+            // it once per frame, by `stepper`, not here: see below.
+            property point pointer
+
             onActiveChanged: {
                 if (active) {
                     grab = centroid.position;
+                    pointer = grab;
                     win.expanded = true;   // dragging always reveals it
                 } else {
                     // Magnet: releasing near an edge snaps it the rest of
@@ -552,28 +557,41 @@ ShellRoot {
                 }
             }
 
-            // The window moves by changing its margins, and the compositor
-            // applies that a frame or two later. In the meantime the pointer
-            // keeps reporting against the old position, so correcting the
-            // full error on every event keeps adding a correction that
-            // hasn't landed yet, and the widget shoots off.
-            //
-            // Applying only a fraction of the error converges instead of
-            // diverging. The right fraction depends on how many frames the
-            // compositor takes to apply the margin, which can't be queried:
-            // with one frame of lag the optimum is 0.5, with two it's 0.33.
-            // That's why it's configurable and re-read live.
-            readonly property real gain: cfg.dragGain
-
             onCentroidChanged: {
-                if (!active)
-                    return;
+                if (active)
+                    pointer = centroid.position;
+            }
+        }
+
+        // The window moves by changing its margins, and the compositor
+        // applies that a frame or two later. In the meantime the pointer
+        // keeps reporting against the old position, so correcting the full
+        // error keeps adding a correction that hasn't landed yet, and the
+        // widget shoots off. Applying only a fraction of the error converges
+        // instead of diverging. The right fraction depends on how many
+        // frames the compositor takes to apply the margin, which can't be
+        // queried: with one frame of lag the optimum is 0.5, with two it's
+        // 0.33. That's why it's configurable and re-read live.
+        //
+        // The fraction has to be applied once per *frame*, which is why this
+        // is a FrameAnimation and not the drag handler's own signal. Pointer
+        // events come in far faster than frames: at 1000Hz there are ~16 of
+        // them per frame at 60Hz, all reporting against the same not-yet-
+        // applied position, and 16 corrections of 0.45 compound to 1.0. That
+        // put the effective gain somewhere between 0.45 and runaway,
+        // depending on the mouse's polling rate and how busy the compositor
+        // was, which is what made the drag feel unpredictable.
+        FrameAnimation {
+            id: stepper
+            running: dragger.active
+            onTriggered: {
                 const sw = win.screen ? win.screen.width : 1920;
                 const sh = win.screen ? win.screen.height : 1080;
+                const gain = cfg.dragGain;
                 win.posX = Math.max(0, Math.min(sw - win.boxW,
-                    win.posX + (centroid.position.x - grab.x) * gain));
+                    win.posX + (dragger.pointer.x - dragger.grab.x) * gain));
                 win.posY = Math.max(0, Math.min(sh - win.boxH,
-                    win.posY + (centroid.position.y - grab.y) * gain));
+                    win.posY + (dragger.pointer.y - dragger.grab.y) * gain));
             }
         }
 
