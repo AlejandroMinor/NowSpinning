@@ -45,13 +45,7 @@ mkdir -p ~/.local/share/applications && ln -sfn "$(pwd)/desktop/nowspinning.desk
 nowspinning
 ```
 
-To start it with your session, add to `hyprland.conf`:
-
-```
-exec-once = qs -d -p ~/.config/quickshell/nowspinning
-```
-
-If your setup configures Hyprland through Lua instead (check with `hyprctl systeminfo | grep configProvider`), add a line to your existing `hl.on("hyprland.start", ...)` block instead of `exec-once`, the same way you'd add any other autostart program:
+To start it with your session, add a line to your existing `hl.on("hyprland.start", ...)` block in your Lua config, the same way you'd autostart any other program:
 
 ```lua
 hl.on("hyprland.start", function()
@@ -60,9 +54,9 @@ hl.on("hyprland.start", function()
 end)
 ```
 
-If you don't have one of those yet, this whole block is what goes in your config.
+If you don't have that block yet, the whole thing is what goes in your config. On a plain `hyprland.conf` setup, the equivalent is `exec-once = nowspinning`.
 
-and optionally bind a key to `nowspinning` in your Hyprland keybindings for a manual toggle.
+Optionally, bind a key to `nowspinning` in your Hyprland keybindings for a manual toggle.
 
 ## Config
 
