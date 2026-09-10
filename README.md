@@ -74,7 +74,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `dragGain` | `0.45` | How tightly dragging tracks the cursor; see Limitations |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
 | `peekSide` | `"right"` | CD skin only: which edge of the case the disc pokes out from. `"right"`, `"left"`, `"top"`, or `"bottom"`. Independent of `anchor`; combine freely |
-| `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty means let the compositor pick. Changing this is only confirmed to take effect on restart, see Limitations |
+| `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
 | `preferredPlayer` | `"org.mpris.MediaPlayer2.spotify"` | MPRIS bus name that wins when more than one player is running, even while paused. Empty string means no preference, so whichever player is actually playing wins instead |
 | `x`, `y` | `-1` | Saved position; `-1` means "use `anchor`". Overwritten automatically when dragged |
 
@@ -111,5 +111,5 @@ Developed and tested only on Hyprland, on Arch. Nothing in the code calls Hyprla
 - No queue, library, or playlist view; MPRIS doesn't expose those.
 - Playback position is interpolated between polls, not read continuously, so it can drift by a fraction of a second before the next correction.
 - Drag tracking uses a damping factor (`dragGain`) rather than 1:1 cursor following, because the exact 1:1 approach (a screen-sized window) crashes the GPU driver intermittently on this stack. The damped version is stable but not pixel-perfect during the drag itself.
-- `monitor` is only tested on a single-output setup. It's read once, like most layer-shell surfaces, so there's no confirmation it migrates a running widget live to a different output. Restart (`nowspinning`) after changing it, to be safe.
+- A monitor's orientation is read when the widget starts. Rotating one while it's running isn't picked up: neither Quickshell nor Qt updates the screen size it reported at startup, and catching it would mean listening to Hyprland's IPC, which would tie this to Hyprland specifically. Restart it (`nowspinning` twice) after rotating a monitor. Starting on a rotated output, or moving to one via `monitor`, works fine: the widget gets the rotated dimensions and places itself against them.
 - CPU use is near 0% while paused, and roughly 4 to 10% of one core while spinning, depending on skin and progress style.

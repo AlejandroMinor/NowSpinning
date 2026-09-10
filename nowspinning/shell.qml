@@ -28,11 +28,14 @@ ShellRoot {
         // whatever the compositor picks on its own, normally the focused
         // output at launch.
         //
-        // This is read once at startup, like most Wayland layer-shell
-        // surfaces: there was no second monitor available to confirm
-        // whether Hyprland actually migrates a running surface live if
-        // `monitor` changes later, so treat a change to this one value as
-        // needing a restart (`nowspinning`) rather than assume it hot-swaps.
+        // Changing it is applied live, but not by assigning `screen`
+        // directly: moving a layer-shell surface between outputs while it's
+        // up doesn't survive the trip. Qt hands the same cached-layer items
+        // (the disc, the sheen) to the old window and the new one at once,
+        // logs "Cannot use same item on different windows at the same time",
+        // and segfaults on the next frame. Taking the window down for one
+        // beat and bringing it back up gives it a clean surface to build on
+        // the new output instead.
         readonly property var targetScreen: {
             if (!cfg.monitor)
                 return null;
@@ -41,7 +44,21 @@ ShellRoot {
                     return s;
             return null;
         }
-        screen: targetScreen
+
+        // No binding on `screen`: `migration` assigns it while the window is
+        // down, and a binding would fight that.
+        Component.onCompleted: win.screen = win.targetScreen
+        onTargetScreenChanged: migration.restart()
+
+        visible: !migration.running
+
+        Timer {
+            id: migration
+            // Long enough for the compositor to have actually dropped the
+            // old surface, short enough not to read as a flicker.
+            interval: 60
+            onTriggered: win.screen = win.targetScreen
+        }
 
         // Named presets, so config.json can say `"medium"` instead of
         // forcing a guess at a pixel number. `cfg.discSize` still accepts a
@@ -197,10 +214,35 @@ ShellRoot {
 
         property real posX: cfg.x >= 0 ? cfg.x : anchorX
         property real posY: cfg.y >= 0 ? cfg.y : anchorY
-        readonly property int dockX: posX <= edgeSlack ? -1
-            : (screen && posX + boxW >= screen.width - edgeSlack ? 1 : 0)
-        readonly property int dockY: posY <= edgeSlack ? -1
-            : (screen && posY + boxH >= screen.height - edgeSlack ? 1 : 0)
+
+        // A saved position belongs to the output it was dragged on. Move to
+        // a narrower one, or one that's mounted vertically, and those same
+        // coordinates land past its edge: the compositor has nowhere to put
+        // the surface and the widget is simply gone, with nothing on screen
+        // to say why. So the position is clamped where it's used rather than
+        // where it's stored: `posX` stays whatever was saved, ready for the
+        // wider output if it comes back, and the widget shows up against the
+        // near edge in the meantime.
+        // Landing exactly on the edge would drop it inside the magnet zone,
+        // so it would come back collapsed to a sliver against an edge it was
+        // never docked to, which just reads as "it didn't start". A position
+        // that already fits is left alone, dock and all.
+        function place(saved, limit) {
+            if (saved >= 0 && saved <= limit)
+                return saved;
+            return saved < 0 ? Math.min(anchorMargin, limit)
+                             : Math.max(0, limit - anchorMargin);
+        }
+
+        readonly property real placedX:
+            place(posX, (screen ? screen.width : 1920) - boxW)
+        readonly property real placedY:
+            place(posY, (screen ? screen.height : 1080) - boxH)
+
+        readonly property int dockX: placedX <= edgeSlack ? -1
+            : (screen && placedX + boxW >= screen.width - edgeSlack ? 1 : 0)
+        readonly property int dockY: placedY <= edgeSlack ? -1
+            : (screen && placedY + boxH >= screen.height - edgeSlack ? 1 : 0)
 
         readonly property bool docked: dockX !== 0 || dockY !== 0
         property bool expanded: false
@@ -220,7 +262,7 @@ ShellRoot {
         // startup that way: 3 crashes out of every 10 launches, versus 0 out
         // of 15 with a widget-sized window.
         anchors { top: true; left: true }
-        margins { left: Math.round(win.posX); top: Math.round(win.posY) }
+        margins { left: Math.round(win.placedX); top: Math.round(win.placedY) }
         implicitWidth: win.boxW
         implicitHeight: win.boxH
 
@@ -534,6 +576,11 @@ ShellRoot {
                 if (active) {
                     grab = centroid.position;
                     pointer = grab;
+                    // Start from where it's actually drawn, which isn't
+                    // where it's stored if the saved position belongs to a
+                    // bigger output; see `placedX`.
+                    win.posX = win.placedX;
+                    win.posY = win.placedY;
                     win.expanded = true;   // dragging always reveals it
                 } else {
                     // Magnet: releasing near an edge snaps it the rest of
