@@ -111,7 +111,8 @@ ShellRoot {
 
         readonly property var skins: ({
             "vinyl": vinylSkin,
-            "cd": cdSkin
+            "cd": cdSkin,
+            "disc": discSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -524,6 +525,7 @@ ShellRoot {
 
         Component { id: vinylSkin; VinylSkin {} }
         Component { id: cdSkin; CdSkin {} }
+        Component { id: discSkin; DiscSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction

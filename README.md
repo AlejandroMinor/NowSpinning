@@ -64,9 +64,9 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 | Key | Default | Meaning |
 |---|---|---|
-| `skin` | `"cd"` | `"vinyl"` or `"cd"` |
+| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), or `"disc"` (the same CD on its own, no case) |
 | `discSize` | `"medium"` | `"small"` (120px), `"medium"` (170), `"large"` (220), or `"xl"` (280); an exact pixel size also works as a string, e.g. `"200"`. Everything else scales from this |
-| `showArm` | `false` | Tonearm on the vinyl skin |
+| `showArm` | `false` | Tonearm on the vinyl skin; the disc skins ignore it |
 | `spinDegreesPerSecond` | `9` | Rotation speed; `0` lets the skin pick its own (vinyl: 9, CD: 30) |
 | `artFull` | `false` | Full-face cover art, on skins that support it |
 | `progressStyle` | `"ring"` | `"ring"` around the disc, or `"bar"` inside the controls overlay (forced on square-faced skins) |

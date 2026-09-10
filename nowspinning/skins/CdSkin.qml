@@ -168,67 +168,11 @@ Item {
         Behavior on x { NumberAnimation { duration: 420; easing.type: Easing.InOutCubic } }
         Behavior on y { NumberAnimation { duration: 420; easing.type: Easing.InOutCubic } }
 
-        DiscFace {
-            id: disc
-
+        CdDisc {
             anchors.fill: parent
             size: skin.discSize
-            rotation: spin.angle
-
-            // The printed side, not the reflective one: it's the one that
-            // carries the cover art, and that asymmetry is what actually
-            // gives away that the disc is spinning. The concentric grooves
-            // alone don't do it: a rotated circle is the same circle.
             artUrl: skin.artUrl
-            labelSize: 940
-            labelPlaceholder: "#aeb6c4"
-            holeRadius: 62
-
-            bodyColor: "#b9c1cf"
-            rimColor: "#e9edf4"
-            rimWidth: 3
-
-            // Data tracks: many more of them, and much fainter than a
-            // vinyl groove.
-            grooveInner: 200
-            grooveOuter: 486
-            grooveStep: 6
-            grooveLight: Qt.rgba(1, 1, 1, 0.16)
-            grooveAccent: Qt.rgba(1, 1, 1, 0.30)
-            grooveAccentEvery: 10
-            grooveDark: Qt.rgba(0, 0, 0, 0.10)
-
-            // A CD has no visible track boundaries.
-            bandRadii: []
-
-            labelEdge: Qt.rgba(1, 1, 1, 0.45)
-            labelInner: Qt.rgba(1, 1, 1, 0.30)
-            holeEdge: Qt.rgba(0, 0, 0, 0.20)
-            holeRim: Qt.rgba(1, 1, 1, 0.55)
-        }
-
-        // The rainbow sheen. Same conical highlight as the vinyl skin, with
-        // different colors: on a CD the light splits into a spectrum
-        // instead of just reflecting. Pushed noticeably brighter/more
-        // opaque than the vinyl one, with a near-white hot core at its
-        // peak: over a plain disc the old, subtler version read fine, but
-        // it all but disappeared against a busy, colorful cover.
-        Sheen {
-            anchors.fill: parent
-            holeRadius: skin.discSize * 62 / 1000
-            startAngle: 200
-
-            sweep: Gradient {
-                GradientStop { position: 0.00; color: Qt.rgba(1.00, 1.00, 1.00, 0.00) }
-                GradientStop { position: 0.08; color: Qt.rgba(0.30, 0.85, 1.00, 0.55) }
-                GradientStop { position: 0.14; color: Qt.rgba(0.95, 0.98, 1.00, 0.92) }
-                GradientStop { position: 0.20; color: Qt.rgba(0.55, 0.40, 1.00, 0.68) }
-                GradientStop { position: 0.30; color: Qt.rgba(1.00, 0.35, 0.80, 0.62) }
-                GradientStop { position: 0.40; color: Qt.rgba(1.00, 0.80, 0.25, 0.58) }
-                GradientStop { position: 0.50; color: Qt.rgba(0.35, 1.00, 0.60, 0.62) }
-                GradientStop { position: 0.60; color: Qt.rgba(1.00, 1.00, 1.00, 0.00) }
-                GradientStop { position: 1.00; color: Qt.rgba(1.00, 1.00, 1.00, 0.00) }
-            }
+            angle: spin.angle
         }
     }
 
