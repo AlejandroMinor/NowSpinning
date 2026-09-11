@@ -172,9 +172,14 @@ ShellRoot {
         // ---------------------------------------------------------------
         // Magnetic zone around the edges. Releasing a drag inside it snaps
         // the widget to that edge and hides it; with a hard 4px threshold
-        // you had to drop it exactly on the pixel, which felt fiddly on top
-        // of the damped drag.
-        readonly property int edgeSlack: Math.round(discSize * 0.16)
+        // you had to drop it exactly on the pixel, which felt fiddly. Too
+        // wide is worse the other way, though: the snap is a jump of the
+        // whole zone's width, so a big zone means letting go anywhere near
+        // an edge yanks the widget somewhere you didn't put it. As a
+        // fraction of the disc, so it means the same thing at every size,
+        // and `0` turns the magnet off and leaves the drop where you left it.
+        readonly property int edgeSlack:
+            Math.round(discSize * Math.max(0, cfg.edgeMagnet))
 
         // Position, as margins from the top-left corner.
         // Real numbers, not integers: dragging accumulates fractional
@@ -187,7 +192,9 @@ ShellRoot {
         // The first time it's dragged, this binding breaks on its own and
         // the position starts coming from the mouse instead; that gets
         // saved as x/y, and from then on the anchor is never consulted again.
-        readonly property real anchorMargin: 2 * edgeSlack
+        // Deliberately not tied to `edgeSlack`: turning the magnet down
+        // shouldn't also start the widget flush against the screen edge.
+        readonly property real anchorMargin: Math.round(discSize * 0.32)
 
         readonly property real anchorX: {
             const sw = screen ? screen.width : 1920;
@@ -215,6 +222,18 @@ ShellRoot {
 
         property real posX: cfg.x >= 0 ? cfg.x : anchorX
         property real posY: cfg.y >= 0 ? cfg.y : anchorY
+
+        // Only the snap on release is animated. During a drag the position
+        // is already being driven a frame at a time, and easing it there
+        // would just add lag on top of the compositor's own.
+        Behavior on posX {
+            enabled: !dragger.active
+            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+        }
+        Behavior on posY {
+            enabled: !dragger.active
+            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+        }
 
         // A saved position belongs to the output it was dragged on. Move to
         // a narrower one, or one that's mounted vertically, and those same
@@ -586,20 +605,27 @@ ShellRoot {
                     win.expanded = true;   // dragging always reveals it
                 } else {
                     // Magnet: releasing near an edge snaps it the rest of
-                    // the way there.
+                    // the way there. Worked out into locals first, because
+                    // the snap is animated: reading `win.posX` back right
+                    // after setting it would still give the drop point, and
+                    // that's the value that would get saved.
                     const sw = win.screen ? win.screen.width : 1920;
                     const sh = win.screen ? win.screen.height : 1080;
-                    if (win.posX <= win.edgeSlack)
-                        win.posX = 0;
-                    else if (win.posX >= sw - win.boxW - win.edgeSlack)
-                        win.posX = sw - win.boxW;
-                    if (win.posY <= win.edgeSlack)
-                        win.posY = 0;
-                    else if (win.posY >= sh - win.boxH - win.edgeSlack)
-                        win.posY = sh - win.boxH;
+                    let restX = win.posX;
+                    let restY = win.posY;
+                    if (restX <= win.edgeSlack)
+                        restX = 0;
+                    else if (restX >= sw - win.boxW - win.edgeSlack)
+                        restX = sw - win.boxW;
+                    if (restY <= win.edgeSlack)
+                        restY = 0;
+                    else if (restY >= sh - win.boxH - win.edgeSlack)
+                        restY = sh - win.boxH;
 
-                    cfg.x = Math.round(win.posX);
-                    cfg.y = Math.round(win.posY);
+                    win.posX = restX;
+                    win.posY = restY;
+                    cfg.x = Math.round(restX);
+                    cfg.y = Math.round(restY);
                     configFile.writeAdapter();
                     // Parking it against an edge is what hides it.
                     win.expanded = !win.docked;
@@ -682,6 +708,10 @@ ShellRoot {
                 property string progressStyle: "ring"
                 property real discOpacity: 1.0
                 property real dragGain: 0.45
+
+                // Width of the magnetic zone along each screen edge, as a
+                // fraction of the disc. 0 disables it.
+                property real edgeMagnet: 0.05
 
                 // MPRIS bus name; see MprisSource.qml's `prefer` for what
                 // this actually does.

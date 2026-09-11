@@ -4,6 +4,7 @@
     "discOpacity": 1,
     "discSize": "medium",
     "dragGain": 0.45,
+    "edgeMagnet": 0.05,
     "monitor": "",
     "peekSide": "right",
     "preferredPlayer": "org.mpris.MediaPlayer2.spotify",
