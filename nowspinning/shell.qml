@@ -109,6 +109,12 @@ ShellRoot {
 
         readonly property var settingsOptions: {
             const size = String(cfg.discSize).trim();
+            // A value left empty in config.json falls back instead of
+            // breaking the whole list.
+            const cap = (v, fallback) => {
+                const t = String(v || fallback);
+                return t[0].toUpperCase() + t.slice(1);
+            };
             const toggles = [];
             if (skinName === "vinyl") {
                 toggles.push({ key: "showArm", label: "Arm", on: cfg.showArm });
@@ -117,7 +123,7 @@ ShellRoot {
             if (ringUsable)
                 toggles.push({ key: "ring", label: "Ring", on: progressStyle === "ring" });
             if (skinName === "cd")
-                toggles.push({ key: "peekSide", label: "Side: " + cfg.peekSide[0].toUpperCase() + cfg.peekSide.slice(1), on: false });
+                toggles.push({ key: "peekSide", label: "Side: " + cap(cfg.peekSide, "right"), on: false });
             if (skinName === "cassette" || skinName === "walkman")
                 toggles.push({ key: "clear", label: "Clear", on: cfg.shellOpacity < 1 });
             // The flat skins' options; the stepped ones show their value and step on click.
@@ -129,7 +135,7 @@ ShellRoot {
             }
             if (skinName === "crt") {
                 toggles.push({ key: "showBezel", label: "Bezel", on: cfg.showBezel });
-                toggles.push({ key: "effect", label: "Glitch: " + cfg.effect[0].toUpperCase() + cfg.effect.slice(1), on: false });
+                toggles.push({ key: "effect", label: "Glitch: " + cap(cfg.effect, "random"), on: false });
             }
             if (skinName === "polaroid")
                 toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
