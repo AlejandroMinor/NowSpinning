@@ -74,10 +74,13 @@ Item {
         onTriggered: root.volumeVisible = false
     }
 
+    // Round over a round face, except while the settings page is open:
+    // then it squares off so the rows of chips get the corners too.
     Rectangle {
         anchors.fill: parent
-        radius: root.circular ? width / 2 : root.cornerRadius
-        color: Qt.rgba(0, 0, 0, 0.72)
+        radius: root.circular && !root.settingsOpen ? width / 2 : root.cornerRadius
+        Behavior on radius { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        color: Qt.rgba(0, 0, 0, root.settingsOpen ? 0.82 : 0.72)
         antialiasing: true
     }
 
@@ -215,8 +218,8 @@ Item {
         id: page
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -gear.height / 2
-        width: parent.width * (root.circular ? 0.70 : 0.84)
-        spacing: Math.round(root.size * 0.03)
+        width: parent.width * 0.86
+        spacing: Math.round(root.size * 0.022)
         opacity: root.settingsOpen ? 1 : 0
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: 140 } }

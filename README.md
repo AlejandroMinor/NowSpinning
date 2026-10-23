@@ -1,6 +1,6 @@
 # NowSpinning
 
-A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, or a portable cassette player, with transport controls on hover.
+A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid), with transport controls on hover.
 
 It's a player *client* only: it displays and controls whatever MPRIS player is already running. It doesn't play audio, manage a library, or handle a queue.
 
@@ -64,7 +64,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 | Key | Default | Meaning |
 |---|---|---|
-| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside), or `"walkman"` (the cassette inside a portable player, its play key pressed in while playing) |
+| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside), `"walkman"` (the cassette inside a portable player, its play key pressed in while playing), `"crt"` (the cover on an old TV, with scanlines and a glitch every few seconds), `"ascii"` (the cover drawn in characters), `"pixel"` (the cover pixelated), or `"polaroid"` (the cover as a photo with the title in marker; each new track drops a new one on top) |
 | `discSize` | `"medium"` | `"small"` (120px), `"medium"` (170), `"large"` (220), or `"xl"` (280); an exact pixel size also works as a string, e.g. `"200"`. Everything else scales from this |
 | `showArm` | `false` | Tonearm on the vinyl skin; the other skins ignore it |
 | `showDeck` | `false` | Vinyl skin only: the turntable under the record, with platter, speed keys and cue lever. Makes the widget wider; pairs well with `showArm` |
@@ -117,3 +117,7 @@ Developed and tested only on Hyprland, on Arch. Only one thing calls Hyprland sp
 - A layer-shell surface can't be moved by the compositor the way a floating window is, and a pointer event only says where the cursor is relative to the widget, not on screen. On Hyprland the widget asks its IPC socket for the real cursor position every frame and follows it 1:1. Elsewhere it falls back to a damped correction (`dragGain`), which is stable but lags, and can overshoot and bounce back on fast moves. (A screen-sized window would give 1:1 tracking anywhere, but it crashes the GPU driver intermittently on this stack.)
 - A monitor's orientation is read when the widget starts. Rotating one while it's running isn't picked up: neither Quickshell nor Qt updates the screen size it reported at startup, and catching it would mean listening to Hyprland's IPC, which would tie this to Hyprland specifically. Restart it (`nowspinning` twice) after rotating a monitor. Starting on a rotated output, or moving to one via `monitor`, works fine: the widget gets the rotated dimensions and places itself against them.
 - CPU use is near 0% while paused, and roughly 4 to 10% of one core while spinning, depending on skin and progress style.
+
+## Credits
+
+- The Polaroid skin writes the title in [Permanent Marker](https://fonts.google.com/specimen/Permanent+Marker) by Font Diner, under the Apache License 2.0; see `nowspinning/fonts/PermanentMarker-LICENSE.txt`.

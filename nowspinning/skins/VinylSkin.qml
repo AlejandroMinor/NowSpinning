@@ -48,6 +48,8 @@
 //                                         itself (the cassette's tape)
 //   property color accent                 a color picked out of the cover art,
 //                                         or white when there isn't one
+//   property string title                 the track's title, for a skin that
+//                                         writes it on the object (the Polaroid)
 //   property var player                   the MprisSource, for a skin with
 //                                         working controls of its own
 //   readonly property bool ownTransport   it has its own transport keys, so the

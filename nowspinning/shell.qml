@@ -99,10 +99,12 @@ ShellRoot {
         // Controls.qml expects. Toggles only show up where they do
         // something: the arm and deck on the vinyl, the ring on round faces,
         // the clear shell on the tapes.
-        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman"]
+        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
+                                          "crt", "ascii", "pixel", "polaroid"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
-            walkman: "Walkman"
+            walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
+            polaroid: "Polaroid"
         })
 
         readonly property var settingsOptions: {
@@ -196,7 +198,11 @@ ShellRoot {
             "disc": discSkin,
             "cassette": cassetteSkin,
             "minidisc": minidiscSkin,
-            "walkman": walkmanSkin
+            "walkman": walkmanSkin,
+            "crt": crtSkin,
+            "ascii": asciiSkin,
+            "pixel": pixelSkin,
+            "polaroid": polaroidSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -245,7 +251,9 @@ ShellRoot {
         // and stays on screen when the widget hides against an edge.
         readonly property bool solidBox:
             skinLoader.item ? skinLoader.item.solidBox === true : false
-        readonly property bool roundHit: faceIsCircle && !solidBox
+        // The settings page squares the overlay off, so its corners need to
+        // take clicks too.
+        readonly property bool roundHit: faceIsCircle && !solidBox && !controls.settingsOpen
         readonly property rect body: solidBox ? Qt.rect(0, 0, boxW, boxH) : face
 
         // How much of the disc still peeks out once it's docked to an edge.
@@ -580,6 +588,8 @@ ShellRoot {
                                     item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
                                 if (item.player !== undefined)
                                     item.player = source;
+                                if (item.title !== undefined)
+                                    item.title = Qt.binding(() => source.title);
 
                                 // A skin that starts closed needs a bump to
                                 // open. If the skin was switched to live
@@ -736,6 +746,10 @@ ShellRoot {
         Component { id: cassetteSkin; CassetteSkin {} }
         Component { id: minidiscSkin; MiniDiscSkin {} }
         Component { id: walkmanSkin; WalkmanSkin {} }
+        Component { id: crtSkin; CrtSkin {} }
+        Component { id: asciiSkin; AsciiSkin {} }
+        Component { id: pixelSkin; PixelSkin {} }
+        Component { id: polaroidSkin; PolaroidSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
