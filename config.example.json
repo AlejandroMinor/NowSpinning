@@ -11,6 +11,7 @@
     "progressStyle": "ring",
     "shellOpacity": 0.7,
     "showArm": false,
+    "showDeck": false,
     "skin": "cd",
     "spinDegreesPerSecond": 0,
     "tintFromArt": true,

@@ -81,6 +81,7 @@ ShellRoot {
 
         readonly property string skinName: cfg.skin
         readonly property bool showArm: cfg.showArm
+        readonly property bool showDeck: cfg.showDeck
 
         // "ring" = the wave wraps around the disc. "bar" = it runs straight
         // inside the controls overlay, and only shows up on hover.
@@ -296,8 +297,9 @@ ShellRoot {
 
         // Where on the ring the pointer would seek to, 0..1, or -1.
         readonly property real ringPreview: hover.hovered && ringSeekable && !collapsed
-            ? ringProgress.fractionAt(hover.point.position.x - stage.x - content.x,
-                                      hover.point.position.y - stage.y - content.y, ringReach)
+            ? ringProgress.fractionAt(hover.point.position.x - stage.x - content.x - ringProgress.x,
+                                      hover.point.position.y - stage.y - content.y - ringProgress.y,
+                                      ringReach)
             : -1
 
         // ---------------------------------------------------------------
@@ -432,6 +434,8 @@ ShellRoot {
                                     source.playing && !(win.flipped && !win.skinReveals));
                                 if (item.showArm !== undefined)
                                     item.showArm = Qt.binding(() => win.showArm);
+                                if (item.showDeck !== undefined)
+                                    item.showDeck = Qt.binding(() => win.showDeck);
                                 // 0 means "let the skin decide" (a CD spins
                                 // much faster than a vinyl record). The
                                 // check has to live inside the binding, not
@@ -503,6 +507,10 @@ ShellRoot {
                                 item.playing = false;
                                 if (item.showArm !== undefined)
                                     item.showArm = false;
+                                // The deck stays: flipping the record over
+                                // doesn't make the turntable disappear.
+                                if (item.showDeck !== undefined)
+                                    item.showDeck = Qt.binding(() => win.showDeck);
                                 if (item.blankLabel !== undefined)
                                     item.blankLabel = true;
                                 // Same tape split as the front, so the
@@ -556,9 +564,14 @@ ShellRoot {
                 // The ring itself doesn't rotate: the finish line has to
                 // stay put to stay readable. What moves is the progress, and
                 // the wave's phase.
+                // Centered on the face, not the box: on the vinyl deck the
+                // record sits left of center.
                 ProgressRing {
                     id: ringProgress
-                    anchors.fill: parent
+                    width: Math.round(win.discSize * 1.14)
+                    height: width
+                    x: Math.round(win.face.x + win.face.width / 2 - width / 2)
+                    y: Math.round(win.face.y + win.face.height / 2 - height / 2)
                     progress: source.progress
                     visible: win.ringStyle && source.duration > 0
                     radius: win.ringRadius
@@ -633,7 +646,8 @@ ShellRoot {
                 const px = point.position.x - stage.x - content.x;
                 const py = point.position.y - stage.y - content.y;
                 const onRing = win.ringSeekable
-                    ? ringProgress.fractionAt(px, py, win.ringReach) : -1;
+                    ? ringProgress.fractionAt(px - ringProgress.x, py - ringProgress.y,
+                                              win.ringReach) : -1;
                 const onBar = controls.barFraction(content, px, py);
                 if (onRing >= 0 || onBar >= 0) {
                     source.seekTo(onRing >= 0 ? onRing : onBar);
@@ -771,6 +785,8 @@ ShellRoot {
                 property string discSize: "medium"
                 property string skin: "cd"
                 property bool showArm: false
+                // Vinyl only: the turntable under the record.
+                property bool showDeck: false
                 property real spinDegreesPerSecond: 9
                 property bool artFull: false
 

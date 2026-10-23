@@ -67,6 +67,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), or `"cassette"` (the tape winds from one reel to the other as the track plays) |
 | `discSize` | `"medium"` | `"small"` (120px), `"medium"` (170), `"large"` (220), or `"xl"` (280); an exact pixel size also works as a string, e.g. `"200"`. Everything else scales from this |
 | `showArm` | `false` | Tonearm on the vinyl skin; the other skins ignore it |
+| `showDeck` | `false` | Vinyl skin only: the turntable under the record, with platter, speed keys and cue lever. Makes the widget wider; pairs well with `showArm` |
 | `spinDegreesPerSecond` | `9` | Rotation speed; `0` lets the skin pick its own (vinyl: 9, CD: 30, cassette: 40, for a reel holding half the tape) |
 | `artFull` | `false` | Full-face cover art, on skins that support it |
 | `progressStyle` | `"ring"` | `"ring"` around the disc, or `"bar"` inside the controls overlay (forced on square-faced skins) |

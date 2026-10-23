@@ -27,6 +27,7 @@
 //
 //   property real spinDegreesPerSecond
 //   property bool showArm
+//   property bool showDeck                the turntable under the record
 //   property bool blankLabel              large, unprinted label, for text to
 //                                         be drawn over it (used by the back
 //                                         side / track info card)
@@ -71,6 +72,16 @@ Item {
     // The tonearm is optional. Off by default: the disc alone reads cleaner.
     property bool showArm: false
 
+    // The whole turntable under the record: plinth, platter, speed keys.
+    // Off by default too; it makes the widget a good deal wider.
+    property bool showDeck: false
+
+    // Drives the arm across the record as the track plays.
+    property real progress: 0
+
+    // Tints the platter and the speed light.
+    property color accent: "white"
+
     // A vinyl record does NOT offer full-face cover art: with the art
     // covering the whole disc it stops reading as vinyl and starts looking
     // like a CD. The machinery for it lives in DiscFace and works fine; this
@@ -83,13 +94,29 @@ Item {
     // around it.
     property bool blankLabel: false
 
-    readonly property real boxFactor: showArm ? arm.boxFactor : 1.02
-    readonly property rect faceRect: Qt.rect((width - size) / 2,
-                                             (height - size) / 2, size, size)
+    readonly property real r: size / 2
+
+    // Room around the plinth for its shadow, in disc radii.
+    readonly property real pad: 0.10
+
+    // Without the deck the skin is a square around the disc. With it, the
+    // box is the plinth plus its shadow, and the disc sits left of center.
+    readonly property real boxW: showDeck
+        ? (deck.edgeLeft + deck.edgeRight + 2 * pad) * r
+        : size * (showArm ? arm.boxFactor : 1.02)
+    readonly property real boxH: showDeck
+        ? (deck.edgeTop + deck.edgeBottom + 2 * pad) * r
+        : boxW
+    readonly property real boxFactor: Math.max(boxW, boxH) / size
+
+    readonly property real discX: showDeck ? (deck.edgeLeft + pad) * r : width / 2
+    readonly property real discY: showDeck ? (deck.edgeTop + pad) * r : height / 2
+
+    readonly property rect faceRect: Qt.rect(discX - size / 2, discY - size / 2, size, size)
     readonly property bool faceIsCircle: true
 
-    implicitWidth: Math.round(size * boxFactor)
-    implicitHeight: implicitWidth
+    implicitWidth: Math.round(boxW)
+    implicitHeight: Math.round(boxH)
 
     SpinDriver {
         id: spin
@@ -97,32 +124,58 @@ Item {
         degreesPerSecond: skin.spinDegreesPerSecond
     }
 
-    DiscFace {
-        id: disc
-
-        anchors.centerIn: parent
-        size: skin.size
-        artUrl: skin.artUrl
-        rotation: spin.angle
-
-        labelSize: skin.artFull ? 952 : (skin.blankLabel ? 720 : 396)
-        Behavior on labelSize {
-            NumberAnimation { duration: 420; easing.type: Easing.InOutCubic }
-        }
+    TurntableDeck {
+        id: deck
+        anchors.fill: parent
+        visible: skin.showDeck
+        discSize: skin.size
+        cx: skin.discX
+        cy: skin.discY
+        angle: spin.angle
+        playing: skin.playing
+        accent: skin.accent
     }
 
-    Sheen {
+    // Square around the disc's center: the arm places itself against it.
+    Item {
+        x: skin.discX - width / 2
+        y: skin.discY - height / 2
         width: skin.size
         height: skin.size
-        anchors.centerIn: parent
-        holeRadius: skin.size * disc.holeRadius / disc.canvas
-    }
 
-    Tonearm {
-        id: arm
-        visible: skin.showArm
-        discSize: skin.size
-        down: skin.playing
-        z: 1
+        DiscFace {
+            id: disc
+
+            anchors.centerIn: parent
+            size: skin.size
+            artUrl: skin.artUrl
+            rotation: spin.angle
+
+            labelSize: skin.artFull ? 952 : (skin.blankLabel ? 720 : 396)
+            Behavior on labelSize {
+                NumberAnimation { duration: 420; easing.type: Easing.InOutCubic }
+            }
+        }
+
+        Sheen {
+            anchors.fill: parent
+            holeRadius: skin.size * disc.holeRadius / disc.canvas
+        }
+
+        // On the deck the arm gets a proper bearing, set further out so it
+        // clears the platter: longer, and resting off to the side.
+        Tonearm {
+            id: arm
+            visible: skin.showArm
+            discSize: skin.size
+            down: skin.playing
+            progress: skin.progress
+            showBase: skin.showDeck
+            baseRing: deck.platterMetal
+            pivotDistance: skin.showDeck ? 1.30 : 1.02
+            length: skin.showDeck ? 1.22 : 0.97
+            restRadius: skin.showDeck ? 1.20 : 1.06
+            z: 1
+        }
     }
 }
