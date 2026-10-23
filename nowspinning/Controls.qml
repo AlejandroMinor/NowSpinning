@@ -24,6 +24,10 @@ Item {
     property string sizeLabel: ""
     signal resizeRequested()
 
+    // Current skin, shown on the skin button.
+    property string skinLabel: ""
+    signal skinRequested()
+
     // Replaces the artist line while set: the time a click would jump to,
     // while the pointer is over the ring outside this overlay.
     property string hint: ""
@@ -194,46 +198,77 @@ Item {
         }
     }
 
-    // Size, apart from the transport row, near the bottom edge: it's a
-    // setting, not playback, and four buttons in that row don't fit the
-    // small preset's circle.
-    Item {
-        id: sizeButton
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: Math.round(root.size * (root.circular ? 0.07 : 0.05))
-        width: sizeRow.width + Math.round(root.size * 0.06)
+    // Settings, apart from the transport row, near the bottom edge: they
+    // aren't playback, and more buttons in that row don't fit the small
+    // preset's circle. Each one steps through its options on every click.
+    component Pill: Item {
+        id: pill
+        property string kind
+        property string label
+        signal tapped()
+
+        width: pillRow.width + Math.round(root.size * 0.06)
         height: Math.round(root.size * 0.11)
 
         Rectangle {
             anchors.fill: parent
             radius: height / 2
-            color: Qt.rgba(1, 1, 1, sizeHover.hovered ? 0.16 : 0.08)
+            color: Qt.rgba(1, 1, 1, pillHover.hovered ? 0.16 : 0.08)
             Behavior on color { ColorAnimation { duration: 120 } }
         }
 
         Row {
-            id: sizeRow
+            id: pillRow
             anchors.centerIn: parent
             spacing: Math.round(root.size * 0.012)
 
             IconButton {
                 anchors.verticalCenter: parent.verticalCenter
                 width: Math.round(root.size * 0.08); height: width
-                kind: "size"
+                kind: pill.kind
                 enabled: false   // the whole pill takes the click
             }
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.sizeLabel
+                text: pill.label
                 color: Qt.rgba(1, 1, 1, 0.8)
                 font.pixelSize: Math.max(7, Math.round(root.size * 0.05))
                 font.weight: Font.DemiBold
             }
         }
 
-        HoverHandler { id: sizeHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { onTapped: root.resizeRequested() }
+        HoverHandler { id: pillHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: pill.tapped() }
+    }
+
+    // Whether a point lands on the settings buttons, so the window's own
+    // tap (which flips the widget) can leave it alone. `x`/`y` are in
+    // `from`'s coordinates.
+    function onSettings(from, x, y) {
+        if (!shown)
+            return false;
+        const p = settings.mapFromItem(from, x, y);
+        return p.x >= 0 && p.y >= 0 && p.x <= settings.width && p.y <= settings.height;
+    }
+
+    Row {
+        id: settings
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Math.round(root.size * (root.circular ? 0.07 : 0.05))
+        spacing: Math.round(root.size * 0.025)
+
+        Pill {
+            kind: "skin"
+            label: root.skinLabel
+            onTapped: root.skinRequested()
+        }
+
+        Pill {
+            kind: "size"
+            label: root.sizeLabel
+            onTapped: root.resizeRequested()
+        }
     }
 }

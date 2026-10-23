@@ -81,24 +81,16 @@ ShellRoot {
             return i >= 0 ? ["S", "M", "L", "XL"][i] : String(discSize);
         }
 
-        // On the next preset up, wrapping around after the largest. Grows
-        // and shrinks around its center instead of its top-left corner, so
-        // it stays under the pointer that just clicked it.
+        // Applies a change that resizes the box (a new size, a new skin)
+        // around the widget's center instead of its top-left corner, so it
+        // stays under the pointer that just clicked it, and saves it.
         property bool resizing: false
-        function cycleSize() {
-            const raw = String(cfg.discSize).trim();
-            let i = sizeOrder.indexOf(raw);
-            if (i < 0) {
-                // An exact number: on to the first preset bigger than it.
-                i = sizeOrder.findIndex(n => sizePresets[n] > discSize) - 1;
-                if (i < -1)
-                    i = -1;
-            }
+        function keepingCenter(change) {
             const cx = placedX + boxW / 2;
             const cy = placedY + boxH / 2;
 
             resizing = true;
-            cfg.discSize = sizeOrder[(i + 1) % sizeOrder.length];
+            change();
 
             const sw = screen ? screen.width : 1920;
             const sh = screen ? screen.height : 1080;
@@ -108,6 +100,31 @@ ShellRoot {
             cfg.y = Math.round(posY);
             configFile.writeAdapter();
             Qt.callLater(() => resizing = false);
+        }
+
+        // On the next preset up, wrapping around after the largest.
+        function cycleSize() {
+            const raw = String(cfg.discSize).trim();
+            let i = sizeOrder.indexOf(raw);
+            if (i < 0) {
+                // An exact number: on to the first preset bigger than it.
+                i = sizeOrder.findIndex(n => sizePresets[n] > discSize) - 1;
+                if (i < -1)
+                    i = -1;
+            }
+            keepingCenter(() => cfg.discSize = sizeOrder[(i + 1) % sizeOrder.length]);
+        }
+
+        // The skin button steps through these, in this order.
+        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc"]
+        readonly property var skinNames: ({
+            vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD"
+        })
+        readonly property string skinLabel: skinNames[skinName] ?? skinName
+
+        function cycleSkin() {
+            const i = skinOrder.indexOf(skinName);
+            keepingCenter(() => cfg.skin = skinOrder[(i + 1) % skinOrder.length]);
         }
 
         readonly property int discSize: {
@@ -677,6 +694,8 @@ ShellRoot {
                     id: controls
                     sizeLabel: win.sizeLabel
                     onResizeRequested: win.cycleSize()
+                    skinLabel: win.skinLabel
+                    onSkinRequested: win.cycleSkin()
                     accent: accent.accent
                     accentAlpha: win.accentStroke.a
                     hint: win.ringPreview >= 0
@@ -737,6 +756,10 @@ ShellRoot {
                 const onRing = win.ringSeekable
                     ? ringProgress.fractionAt(px - ringProgress.x, py - ringProgress.y,
                                               win.ringReach) : -1;
+                // The settings buttons have their own taps.
+                if (controls.onSettings(content, px, py))
+                    return;
+
                 const onBar = controls.barFraction(content, px, py);
                 if (onRing >= 0 || onBar >= 0) {
                     source.seekTo(onRing >= 0 ? onRing : onBar);

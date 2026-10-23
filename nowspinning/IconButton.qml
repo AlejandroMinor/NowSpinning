@@ -5,7 +5,7 @@ import QtQuick
 Item {
     id: btn
 
-    property string kind: "play"   // prev | play | pause | next | size
+    property string kind: "play"   // prev | play | pause | next | size | skin
     property bool active: true
     property color tint: "white"
     signal activated()
@@ -63,6 +63,15 @@ Item {
                 ctx.lineTo(cx - a, cy + a);
                 ctx.lineTo(cx - a, cy + a - head);
                 ctx.stroke();
+            } else if (btn.kind === "skin") {
+                // A disc: outline, label ring, and the hole.
+                ctx.lineWidth = Math.max(1.2, width * 0.075);
+                ctx.beginPath();
+                ctx.arc(cx, cy, s * 1.05, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx, cy, s * 0.42, 0, Math.PI * 2);
+                ctx.fill();
             } else if (btn.kind === "prev") {
                 drawTriangle(cx + s * 0.40, false);
                 drawTriangle(cx - s * 0.40, false);
