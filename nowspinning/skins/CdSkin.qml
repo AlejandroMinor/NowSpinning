@@ -69,11 +69,18 @@ Item {
     Connections {
         target: cover
         function onSettled() {
+            if (!skin.swapArmed)
+                return;
             // No art, or a failed load: nothing to wait for, so the disc
             // can leave now. A successful load waits instead for its own
-            // fade, handled below by `onCoverReadyChanged`.
-            if (skin.swapArmed && !cover.ready)
+            // fade, handled below by `onCoverReadyChanged`, except when the
+            // cover was already on screen (a track change and straight back)
+            // and `ready` never changed at all: then nothing else would ever
+            // end the swap short of the six-second fallback.
+            if (!cover.ready)
                 skin.swapping = false;
+            else
+                slideOutTimer.restart();
         }
     }
 
