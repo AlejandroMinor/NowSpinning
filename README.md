@@ -86,7 +86,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 - **Drag** anywhere on the disc to move it. It never docks or snaps: it stays exactly where you let go, even right up against an edge.
 - **Right click** to dock it: it slides to the nearest screen edge and hides there, leaving a sliver showing. Right click the sliver to bring it back out for good, or tap it to peek; while peeking, a right click hides it again. Dragging a docked widget undocks it.
-- **Tap the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time.
+- **Double click the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time. Double click again to flip it back. A single click does nothing there, so it can't flip by accident.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
 - **Hover** to reveal transport controls (previous / play-pause / next), and a gear below them. The gear opens a settings page in the same spot: pick the skin and the size straight from the list, and switch the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the tint from the cover art). Changes save to `config.json` at once, and the widget grows or shrinks around its center.

@@ -751,10 +751,12 @@ ShellRoot {
             onWheel: (event) => source.nudgeVolume(event.angleDelta.y > 0 ? 0.05 : -0.05)
         }
 
-        // A tap on the docked sliver pulls it out. Once open, a tap on the
-        // disc's rim flips it and shows the track info card. The center
-        // doesn't count, that's where the transport buttons live. To hide
-        // it again, right click; see `toggleDock`.
+        // A tap on the docked sliver pulls it out. Once open, a double click
+        // on the disc's rim flips it and shows the track info card. A single
+        // click used to, and it kept happening by accident: grabbing it to
+        // move it, missing a button. The center doesn't count either way,
+        // that's where the transport buttons live. To hide it again, right
+        // click; see `toggleDock`.
         TapHandler {
             acceptedButtons: Qt.RightButton
             onTapped: win.toggleDock()
@@ -802,7 +804,8 @@ ShellRoot {
                 if (Math.sqrt(dx * dx + dy * dy) <= 0.40)
                     return;
 
-                win.flipped = !win.flipped;
+                if (tapCount >= 2)
+                    win.flipped = !win.flipped;
             }
         }
 
