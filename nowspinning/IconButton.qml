@@ -5,7 +5,7 @@ import QtQuick
 Item {
     id: btn
 
-    property string kind: "play"   // prev | play | pause | next | size | skin | gear | toggle
+    property string kind: "play"   // prev | play | pause | next | size | skin | gear | toggle | close
     property bool active: true
     property color tint: "white"
     signal activated()
@@ -87,6 +87,17 @@ Item {
                 ctx.arc(cx, cy, g * 0.68, 0, Math.PI * 2);
                 ctx.arc(cx, cy, g * 0.28, 0, Math.PI * 2, true);
                 ctx.fill();
+            } else if (btn.kind === "close") {
+                // An X.
+                ctx.lineWidth = Math.max(1.4, width * 0.11);
+                ctx.lineCap = "round";
+                const k = s * 0.8;
+                ctx.beginPath();
+                ctx.moveTo(cx - k, cy - k);
+                ctx.lineTo(cx + k, cy + k);
+                ctx.moveTo(cx + k, cy - k);
+                ctx.lineTo(cx - k, cy + k);
+                ctx.stroke();
             } else if (btn.kind === "toggle") {
                 // A switch, on.
                 ctx.lineWidth = Math.max(1.2, width * 0.075);

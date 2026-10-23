@@ -203,8 +203,61 @@ Item {
     function onSettings(from, x, y) {
         if (!shown)
             return false;
-        const p = gear.mapFromItem(from, x, y);
-        return p.x >= 0 && p.y >= 0 && p.x <= gear.width && p.y <= gear.height;
+        for (const item of [gear, closeButton]) {
+            const p = item.mapFromItem(from, x, y);
+            if (p.x >= 0 && p.y >= 0 && p.x <= item.width && p.y <= item.height)
+                return true;
+        }
+        return false;
+    }
+
+    // Close, top right: quits the widget. Two clicks, so a stray one can't:
+    // the first arms it (it turns red), the second, within two seconds,
+    // closes. Left alone, it disarms.
+    //
+    // On a round face it sits on the diagonal, inside the curve; on a
+    // rectangular one, in the corner.
+    property bool closeArmed: false
+    onShownChanged: if (!shown) closeArmed = false
+    Timer { id: disarm; interval: 2000; onTriggered: root.closeArmed = false }
+
+    Item {
+        id: closeButton
+        readonly property real d: Math.max(14, Math.round(root.size * 0.11))
+        readonly property real inset: root.circular
+            ? root.width / 2 - (root.width / 2 - d * 0.8) * Math.SQRT1_2
+            : Math.round(root.size * 0.05) + d / 2
+        x: root.width - inset - d / 2
+        y: inset - d / 2
+        width: d
+        height: d
+
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            color: root.closeArmed ? "#d9443a"
+                : Qt.rgba(1, 1, 1, closeHover.hovered ? 0.18 : 0.08)
+            Behavior on color { ColorAnimation { duration: 120 } }
+        }
+
+        IconButton {
+            anchors.centerIn: parent
+            width: parent.width * 0.62; height: width
+            kind: "close"
+            enabled: false   // the whole circle takes the click
+        }
+
+        HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler {
+            onTapped: {
+                if (root.closeArmed) {
+                    Qt.quit();
+                    return;
+                }
+                root.closeArmed = true;
+                disarm.restart();
+            }
+        }
     }
 
     // Gear, near the bottom edge: opens the settings card, and closes it.
