@@ -27,6 +27,10 @@ Item {
     property real headRadius: 3      // the dot at the tip
     property color color: Qt.rgba(1, 1, 1, 0.55)
 
+    // Where a click would jump to, 0..1, drawn as a hollow dot on the path.
+    // -1 draws nothing.
+    property real preview: -1
+
     // The wave travels along its path while playback is active.
     property bool flowing: false
     property real flowSpeed: 2.8     // radians per second
@@ -38,7 +42,36 @@ Item {
     onRadiusChanged: cv.requestPaint()
     onLinearChanged: cv.requestPaint()
     onWidthChanged: cv.requestPaint()
+    onPreviewChanged: cv.requestPaint()
     onColorChanged: cv.requestPaint()
+
+    // The point `t` (0..1) of the way along the path, on its axis: no wave.
+    function pointAt(t) {
+        if (linear)
+            return Qt.point(headRadius + t * (width - 2 * headRadius), height / 2);
+        const angle = -Math.PI / 2 + t * Math.PI * 2;
+        return Qt.point(width / 2 + radius * Math.cos(angle),
+                        height / 2 + radius * Math.sin(angle));
+    }
+
+    // The inverse: how far along the path a point sits, or -1 if it's not
+    // close enough to the path to count. `reach` is how far off the axis
+    // still counts, in px.
+    function fractionAt(x, y, reach) {
+        if (linear) {
+            if (Math.abs(y - height / 2) > reach)
+                return -1;
+            return Math.max(0, Math.min(1,
+                (x - headRadius) / Math.max(1, width - 2 * headRadius)));
+        }
+        const dx = x - width / 2;
+        const dy = y - height / 2;
+        if (Math.abs(Math.sqrt(dx * dx + dy * dy) - radius) > reach)
+            return -1;
+        // Starts at 12 o'clock and runs clockwise, same as the drawing.
+        const t = (Math.atan2(dy, dx) + Math.PI / 2) / (Math.PI * 2);
+        return t < 0 ? t + 1 : t;
+    }
 
     // 30 fps, not 60: the wave completes a cycle every 2.2s, so that's still
     // ~67 frames per cycle. Repainting the canvas at double that rate cost
@@ -67,11 +100,20 @@ Item {
             const ctx = getContext("2d");
             ctx.reset();
 
+            const tau = Math.PI * 2;
+
+            if (ring.preview >= 0) {
+                const at = ring.pointAt(ring.preview);
+                ctx.beginPath();
+                ctx.arc(at.x, at.y, Math.max(3, ring.headRadius * 1.6), 0, tau);
+                ctx.lineWidth = Math.max(1, ring.thickness * 0.8);
+                ctx.strokeStyle = ring.color;
+                ctx.stroke();
+            }
+
             const p = Math.max(0, Math.min(1, ring.progress));
             if (p <= 0)
                 return;
-
-            const tau = Math.PI * 2;
 
             // Total path length: the circumference, or the width.
             const span = ring.linear ? width - 2 * ring.headRadius

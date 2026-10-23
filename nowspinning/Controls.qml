@@ -20,6 +20,26 @@ Item {
     property color accent: "white"
     property real accentAlpha: 0.55
 
+    // Replaces the artist line while set: the time a click would jump to,
+    // while the pointer is over the ring outside this overlay.
+    property string hint: ""
+
+    // Where on the bar a point falls, 0..1, or -1 if it isn't on the bar or
+    // the bar can't seek right now. `x`/`y` are in `from`'s coordinates.
+    // The bar is thin, so a band above and below it counts too.
+    function barFraction(from, x, y) {
+        if (!shown || !showProgress || !source || !source.canSeek)
+            return -1;
+        const p = bar.mapFromItem(from, x, y);
+        if (p.x < 0 || p.x > bar.width)
+            return -1;
+        return bar.fractionAt(p.x, p.y, Math.max(6, root.size * 0.06));
+    }
+
+    readonly property real barPreview: barHover.hovered
+        ? barFraction(barHover.parent, barHover.point.position.x, barHover.point.position.y)
+        : -1
+
     opacity: shown ? 1 : 0
     visible: opacity > 0
     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutQuad } }
@@ -68,7 +88,9 @@ Item {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
-            text: root.source ? root.source.artist : ""
+            text: root.barPreview >= 0 && root.source
+                ? root.source.formatClock(root.barPreview * root.source.duration)
+                : (root.hint || (root.source ? root.source.artist : ""))
             color: Qt.rgba(1, 1, 1, 0.62)
             font.pixelSize: Math.max(8, Math.round(root.size * 0.056))
         }
@@ -109,9 +131,20 @@ Item {
             width: parent.width
             height: Math.max(6, Math.round(root.size * 0.055))
 
+            // Hover over a taller strip than the bar itself: at widget size
+            // the bar is a few pixels tall, too thin to aim at.
+            Item {
+                anchors.centerIn: parent
+                width: parent.width
+                height: Math.max(parent.height, Math.round(root.size * 0.14))
+                HoverHandler { id: barHover }
+            }
+
             ProgressRing {
+                id: bar
                 anchors.fill: parent
                 linear: true
+                preview: root.barPreview
                 visible: root.showProgress && root.source && root.source.duration > 0
                 progress: root.source ? root.source.progress : 0
                 waves: 7

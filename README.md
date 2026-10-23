@@ -85,6 +85,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 - **Drag** anywhere on the disc to move it.
 - **Drop near a screen edge** to dock and auto-hide it, leaving a sliver showing. Tap the sliver to bring it back out.
 - **Tap the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time.
+- **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
 - **Hover** to reveal transport controls (previous / play-pause / next).
 
@@ -109,7 +110,6 @@ Developed and tested only on Hyprland, on Arch. Nothing in the code calls Hyprla
 ## Limitations
 
 - Single player at a time: `preferredPlayer` wins if it's running, otherwise whichever MPRIS player is currently playing.
-- No seek-by-click on the progress indicator, it's read-only.
 - No queue, library, or playlist view; MPRIS doesn't expose those.
 - Playback position is interpolated between polls, not read continuously, so it can drift by a fraction of a second before the next correction.
 - Drag tracking uses a damping factor (`dragGain`) rather than 1:1 cursor following, because the exact 1:1 approach (a screen-sized window) crashes the GPU driver intermittently on this stack. The damped version is stable but not pixel-perfect during the drag itself.

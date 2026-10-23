@@ -81,6 +81,24 @@ QtObject {
     readonly property bool hasVolume: current ? current.volumeSupported : false
     readonly property real volume:    current && current.volumeSupported ? current.volume : 0
 
+    // Jumping to a point in the track. Needs both: `canSeek` alone says the
+    // player accepts the command, but without `positionSupported` there's
+    // no position to jump from, and nothing to draw the result against.
+    readonly property bool canSeek: current
+        ? current.canSeek && current.positionSupported && duration > 0 : false
+
+    // `fraction` is 0..1 of the track. The local clock is moved right away
+    // instead of waiting for the next poll to confirm it: otherwise the
+    // progress indicator would sit at the old spot for up to two seconds
+    // after the click, looking like the click didn't take.
+    function seekTo(fraction) {
+        if (!canSeek)
+            return;
+        const target = Math.max(0, Math.min(1, fraction)) * duration;
+        current.position = target;
+        position = target;
+    }
+
     function previous() { if (canPrev) current.previous(); }
     function next()     { if (canNext) current.next(); }
     function toggle()   { if (canToggle) current.togglePlaying(); }

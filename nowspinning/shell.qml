@@ -90,6 +90,15 @@ ShellRoot {
         // bar isn't a choice, it's the only option.
         readonly property bool ringStyle: progressStyle === "ring" && ringUsable
 
+        // Clicking the ring jumps to that point in the track. Only while it's
+        // actually drawn and the player can take it; otherwise the ring's
+        // area stays click-through, like the rest of the empty box.
+        readonly property bool ringSeekable: ringStyle && source.canSeek
+
+        // The ring's own radius, and how far off it a click still counts.
+        readonly property real ringRadius: discSize * 0.535
+        readonly property real ringReach: Math.max(6, discSize * 0.05)
+
         // Disc transparency. This is QML alpha, not a compositor effect: it
         // looks the same whether or not Hyprland's blur is on.
         readonly property real discOpacity: cfg.discOpacity
@@ -284,6 +293,12 @@ ShellRoot {
         readonly property color accentStroke: Qt.rgba(accent.accent.r, accent.accent.g,
             accent.accent.b, accent.tinted ? 0.85 : 0.55)
 
+        // Where on the ring the pointer would seek to, 0..1, or -1.
+        readonly property real ringPreview: hover.hovered && ringSeekable && !collapsed
+            ? ringProgress.fractionAt(hover.point.position.x - stage.x - content.x,
+                                      hover.point.position.y - stage.y - content.y, ringReach)
+            : -1
+
         // ---------------------------------------------------------------
         // Window
         // ---------------------------------------------------------------
@@ -316,18 +331,25 @@ ShellRoot {
             // `face` (the disc peeking out of its case): there, the hit area
             // has to be the whole box, not just the face, or those parts
             // would never receive mouse events.
+            //
+            // A seekable ring sits outside the face, so the ellipse grows
+            // out to it; otherwise clicks on the ring would fall straight
+            // through to whatever's behind the widget.
+            readonly property real grow: win.ringSeekable
+                ? Math.max(0, win.ringRadius + win.ringReach - win.face.width / 2) : 0
+
             x: stage.x + (win.collapsed
                 ? (win.dockX > 0 ? win.boxW - win.peek : 0)
-                : (win.faceIsCircle ? win.face.x : 0))
+                : (win.faceIsCircle ? win.face.x - grow : 0))
             y: stage.y + (win.collapsed
                 ? (win.dockY > 0 ? win.boxH - win.peek : 0)
-                : (win.faceIsCircle ? win.face.y : 0))
+                : (win.faceIsCircle ? win.face.y - grow : 0))
             width: win.collapsed && win.dockX !== 0 ? win.peek
                 : (win.collapsed ? win.boxW
-                : (win.faceIsCircle ? win.face.width : win.boxW))
+                : (win.faceIsCircle ? win.face.width + 2 * grow : win.boxW))
             height: win.collapsed && win.dockY !== 0 ? win.peek
                 : (win.collapsed ? win.boxH
-                : (win.faceIsCircle ? win.face.height : win.boxH))
+                : (win.faceIsCircle ? win.face.height + 2 * grow : win.boxH))
 
             // The docked sliver still counts even while open against an edge.
             regions: win.docked && !win.collapsed ? [dockStrip] : []
@@ -524,10 +546,12 @@ ShellRoot {
                 // stay put to stay readable. What moves is the progress, and
                 // the wave's phase.
                 ProgressRing {
+                    id: ringProgress
                     anchors.fill: parent
                     progress: source.progress
                     visible: win.ringStyle && source.duration > 0
-                    radius: win.discSize * 0.535
+                    radius: win.ringRadius
+                    preview: win.ringPreview
                     color: win.accentStroke
                     waves: 14
 
@@ -545,8 +569,11 @@ ShellRoot {
                 }
 
                 Controls {
+                    id: controls
                     accent: accent.accent
                     accentAlpha: win.accentStroke.a
+                    hint: win.ringPreview >= 0
+                        ? source.formatClock(win.ringPreview * source.duration) : ""
                     x: win.face.x
                     y: win.face.y
                     width: win.face.width
@@ -567,7 +594,11 @@ ShellRoot {
         // ---------------------------------------------------------------
         // Interaction
         // ---------------------------------------------------------------
-        HoverHandler { id: hover }
+        HoverHandler {
+            id: hover
+            cursorShape: win.ringPreview >= 0 || controls.barPreview >= 0
+                ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
 
         WheelHandler {
             target: null   // only care about the event, nothing to transform
@@ -582,6 +613,18 @@ ShellRoot {
             onTapped: (point) => {
                 if (win.collapsed) {
                     win.expanded = true;
+                    return;
+                }
+
+                // A click on the ring, or on the bar inside the controls,
+                // jumps to that point in the track instead of flipping.
+                const px = point.position.x - stage.x - content.x;
+                const py = point.position.y - stage.y - content.y;
+                const onRing = win.ringSeekable
+                    ? ringProgress.fractionAt(px, py, win.ringReach) : -1;
+                const onBar = controls.barFraction(content, px, py);
+                if (onRing >= 0 || onBar >= 0) {
+                    source.seekTo(onRing >= 0 ? onRing : onBar);
                     return;
                 }
 
