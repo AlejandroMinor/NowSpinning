@@ -10,7 +10,8 @@
 //
 // Options: holoColor (cyan, green, pink, amber, art for the cover's own
 // colour, or any "#rrggbb"; anything else falls back to cyan), holoMotion (the float, the rings, the crawling lines) and
-// holoGlitch (the dropouts) and holoOpacity (how solid the projection is).
+// holoGlitch (the dropouts), holoOpacity (how solid the projection is) and
+// holoBase (the emitter and its beam; off, the picture fills the room).
 //
 // See VinylSkin.qml for the skin contract. On top of the usual subset, this
 // one reads the optional `accent`.
@@ -34,6 +35,8 @@ Item {
     property bool holoMotion: true      // float, turning rings, crawling lines
     property bool holoGlitch: true      // the signal dropouts
     property real holoOpacity: 1        // how solid the projection is
+    property bool holoBase: true        // the emitter and its beam; without
+                                        // them the picture takes the room
     property color accent: "white"
 
     readonly property var palette: ({
@@ -50,7 +53,7 @@ Item {
     readonly property bool moving: playing && holoMotion && !blankLabel
 
     implicitWidth: size
-    implicitHeight: Math.round(size * 1.16)
+    implicitHeight: Math.round(size * (holoBase ? 1.16 : 1.0))
 
     readonly property real boxFactor: implicitHeight / size
     readonly property rect faceRect: Qt.rect(0, 0, width, height)
@@ -58,7 +61,7 @@ Item {
     // Light doesn't cast one.
     readonly property bool ownShadow: true
 
-    readonly property real pic: size * 0.78
+    readonly property real pic: size * (holoBase ? 0.78 : 0.92)
     readonly property real picX: (size - pic) / 2
     readonly property real picY: size * 0.04
     readonly property real emitterY: size * 1.0
@@ -76,6 +79,7 @@ Item {
     // the bottom, the picture's width at the top.
     Shape {
         anchors.fill: parent
+        visible: skin.holoBase
         preferredRendererType: Shape.CurveRenderer
         opacity: skin.blankLabel ? 0.25 : 1
         ShapePath {
@@ -141,6 +145,7 @@ Item {
 
     Item {
         id: emitter
+        visible: skin.holoBase
         readonly property real d: skin.size * 0.92
         x: (skin.size - d) / 2
         y: skin.emitterY - d / 2

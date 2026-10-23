@@ -92,6 +92,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `holoMotion` | `true` | Hologram skin only: the float, the turning emitter ring and the crawling scanlines; `false` holds it still |
 | `holoGlitch` | `true` | Hologram skin only: the signal dropouts every few seconds and on each new track |
 | `holoOpacity` | `1` | Hologram skin only: how solid the projection is, `1`, `0.75` or `0.5` |
+| `holoBase` | `true` | Hologram skin only: the emitter and its beam underneath. `false` drops them and the projection grows into the room they took |
 | `foilStyle` | `"rainbow"` | Foil skin only: the finish, `"rainbow"`, `"gold"`, `"silver"`, `"art"` for a sweep around the cover's own colour, or a hex colour like `"#ff8800"` to sweep around that one. Anything else falls back to the rainbow. The settings card steps through the named ones |
 | `foilMotion` | `true` | Foil skin only: the foil sliding across the card on its own while playing |
 | `foilTilt` | `true` | Foil skin only: the card turning toward the pointer, with the foil following it |

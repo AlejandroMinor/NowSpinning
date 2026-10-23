@@ -11,6 +11,7 @@
     "foilMotion": true,
     "foilStyle": "rainbow",
     "foilTilt": true,
+    "holoBase": true,
     "holoColor": "cyan",
     "holoGlitch": true,
     "holoMotion": true,

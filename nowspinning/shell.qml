@@ -148,6 +148,7 @@ ShellRoot {
                 toggles.push({ key: "holoMotion", label: "Motion", on: cfg.holoMotion });
                 toggles.push({ key: "holoGlitch", label: "Glitch", on: cfg.holoGlitch });
                 toggles.push({ key: "holoOpacity", label: "Alpha: " + Math.round(cfg.holoOpacity * 100) + "%", on: false });
+                toggles.push({ key: "holoBase", label: "Base", on: cfg.holoBase });
             }
             if (skinName === "foil") {
                 toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
@@ -215,7 +216,7 @@ ShellRoot {
         // The flat skins' options, each bound to its config key of the same
         // name when the skin has it.
         readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
-                                            "holoColor", "holoMotion", "holoGlitch", "holoOpacity",
+                                            "holoColor", "holoMotion", "holoGlitch", "holoOpacity", "holoBase",
                                             "foilStyle", "foilMotion", "foilTilt"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
@@ -1228,6 +1229,7 @@ ShellRoot {
                 property bool holoMotion: true
                 property bool holoGlitch: true
                 property real holoOpacity: 1
+                property bool holoBase: true
                 property string foilStyle: "rainbow"
                 property bool foilMotion: true
                 property bool foilTilt: true
