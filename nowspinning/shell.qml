@@ -162,7 +162,8 @@ ShellRoot {
             "vinyl": vinylSkin,
             "cd": cdSkin,
             "disc": discSkin,
-            "cassette": cassetteSkin
+            "cassette": cassetteSkin,
+            "minidisc": minidiscSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -697,6 +698,7 @@ ShellRoot {
         Component { id: cdSkin; CdSkin {} }
         Component { id: discSkin; DiscSkin {} }
         Component { id: cassetteSkin; CassetteSkin {} }
+        Component { id: minidiscSkin; MiniDiscSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
