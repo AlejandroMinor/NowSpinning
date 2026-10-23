@@ -39,6 +39,10 @@ Item {
     // The window sets this when it wants the track info card shown.
     readonly property bool handlesReveal: true
     property bool revealed: false
+    // The glint on the case drifting on its own while playing, and both it
+    // and the disc's sheen following the pointer.
+    property bool lightMotion: true
+    property bool lightTilt: true
 
     // Bumped on a real track change (title), not a bare cover-art change.
     property int trackChangeToken: 0
@@ -138,6 +142,15 @@ Item {
     readonly property rect faceRect: Qt.rect(caseX, caseY, size, size)
     readonly property bool faceIsCircle: false
 
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
     SpinDriver {
         id: spin
         playing: skin.playing
@@ -180,6 +193,9 @@ Item {
             size: skin.discSize
             artUrl: skin.artUrl
             angle: spin.angle
+            following: light.following
+            heading: light.headingFrom(discLayer.x + discLayer.width / 2,
+                                       discLayer.y + discLayer.height / 2)
         }
     }
 
@@ -429,6 +445,20 @@ Item {
                 y: (modelData[1] ? parent.height - inset : inset) - height / 2
                 antialiasing: true
             }
+        }
+    }
+
+    // Light on the case's plastic, as on the foil card: a glint sliding
+    // across it, drifting while playing and following the pointer.
+    Item {
+        x: jewelCase.x
+        y: jewelCase.y
+        width: jewelCase.width
+        height: jewelCase.height
+
+        Glint {
+            lightX: light.lightX
+            strength: 0.26 * skin.coverOpacity + 0.06
         }
     }
 }

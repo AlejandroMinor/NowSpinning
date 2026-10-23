@@ -6,7 +6,8 @@
 // bands, splits into red and cyan, and settles.
 //
 // Rectangular face, so the window swaps the ring for the bar on its own.
-// The back, for the track info, is the emitter projecting nothing.
+// The back, for the track info, is the emitter projecting a blank plane,
+// dark enough for the white text.
 //
 // Options: holoColor (cyan, green, pink, amber, art for the cover's own
 // colour, or any "#rrggbb"; anything else falls back to cyan), holoMotion (the float, the rings, the crawling lines) and
@@ -18,6 +19,7 @@
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
+import "../parts"
 
 Item {
     id: skin
@@ -38,6 +40,8 @@ Item {
     property bool holoBase: true        // the emitter and its beam; without
                                         // them the picture takes the room
     property color accent: "white"
+    property bool lightMotion: true     // the picture drifting on its own
+    property bool lightTilt: true       // the picture turning toward the pointer
 
     readonly property var palette: ({
         cyan: "#59f2ff", green: "#5dff9a", pink: "#ff6ad8", amber: "#ffbe4d"
@@ -66,6 +70,20 @@ Item {
     readonly property real picY: size * 0.04
     readonly property real emitterY: size * 1.0
 
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
+    // The picture leans toward the light and away from the emitter, which
+    // stays put: projected light, so it can shift where nothing solid could.
+    readonly property real leanX: light.lightX * size * 0.04
+    readonly property real leanY: light.lightY * size * 0.02
+
     // Slow float, only while playing.
     property real bob: 0
     SequentialAnimation on bob {
@@ -91,8 +109,8 @@ Item {
                 GradientStop { position: 1.0; color: skin.glow(0.03) }
             }
             startX: skin.size / 2; startY: skin.emitterY
-            PathLine { x: skin.picX + skin.pic * 0.08; y: skin.picY + skin.pic }
-            PathLine { x: skin.picX + skin.pic * 0.92; y: skin.picY + skin.pic }
+            PathLine { x: skin.picX + skin.leanX + skin.pic * 0.08; y: skin.picY + skin.leanY + skin.pic }
+            PathLine { x: skin.picX + skin.leanX + skin.pic * 0.92; y: skin.picY + skin.leanY + skin.pic }
             PathLine { x: skin.size / 2; y: skin.emitterY }
         }
     }
@@ -205,12 +223,14 @@ Item {
     // The projection.
     Item {
         id: projection
-        x: skin.picX
-        y: skin.picY + skin.bob
+        x: skin.picX + skin.leanX
+        y: skin.picY + skin.bob + skin.leanY
+        transform: Tilt { target: projection; amount: light.lightX; degrees: 10 }
         width: skin.pic
         height: skin.pic
-        visible: !skin.blankLabel
-        opacity: skin.holoOpacity * (skin.playing ? 1 : 0.7)
+        // The blank plane stays solid whatever holoOpacity says: the track
+        // info is read off it.
+        opacity: skin.blankLabel ? 1 : skin.holoOpacity * (skin.playing ? 1 : 0.7)
         Behavior on opacity { NumberAnimation { duration: 400 } }
 
         property real jitter: 0
@@ -224,6 +244,13 @@ Item {
             sourceSize { width: 300; height: 300 }
             asynchronous: true
             visible: false
+        }
+
+        // The blank plane: the beam's colour, dimmed far down.
+        Rectangle {
+            anchors.fill: parent
+            visible: skin.blankLabel
+            color: Qt.rgba(skin.beam.r * 0.14, skin.beam.g * 0.14, skin.beam.b * 0.14, 0.85)
         }
 
         // Soft glow behind it.

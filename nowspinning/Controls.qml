@@ -1,4 +1,4 @@
-// The controls overlay, revealed on hover. Knows nothing about the skin: it
+// The controls overlay, revealed by a click. Knows nothing about the skin: it
 // just draws itself on top of a `size` circle (or rounded rect) and that's it.
 import QtQuick
 

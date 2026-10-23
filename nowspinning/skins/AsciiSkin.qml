@@ -4,8 +4,11 @@
 // Ported from HyprFlow's media panel skins. The back, for the track info,
 // is the blank terminal.
 //
+// Sways while playing and turns toward the pointer, like the foil card.
+//
 // See VinylSkin.qml for the skin contract.
 import QtQuick
+import "../parts"
 
 Item {
     id: skin
@@ -16,6 +19,8 @@ Item {
     property bool blankLabel: false
     property int columns: 32
     property bool colored: true
+    property bool lightMotion: true  // swaying on its own
+    property bool lightTilt: true    // turning toward the pointer
 
     readonly property string ramp: " .:-=+*#%@"
     readonly property real cellWidth: size / columns
@@ -37,6 +42,20 @@ Item {
         radius: skin.size * 0.06
         color: "black"
     }
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
+    transform: [
+        Tilt { target: skin; amount: light.lightX; degrees: 9 },
+        Tilt { target: skin; amount: light.lightY; degrees: 9; vertical: true }
+    ]
 
     // Draws the cover at one pixel per cell and reads the pixels back.
     Canvas {

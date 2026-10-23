@@ -143,17 +143,21 @@ ShellRoot {
             }
             if (skinName === "polaroid")
                 toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
+            if (skinName === "foil")
+                toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
+            // The light: every skin follows the pointer, most also drift on
+            // their own (the discs don't: room light stays put).
+            const skinItem = skinLoader.item;
+            if (skinItem && skinItem.lightMotion !== undefined)
+                toggles.push({ key: "lightMotion", label: "Motion", on: cfg.lightMotion });
+            if (skinItem && skinItem.lightTilt !== undefined)
+                toggles.push({ key: "lightTilt", label: "Hover", on: cfg.lightTilt });
             if (skinName === "hologram") {
                 toggles.push({ key: "holoColor", label: "Color: " + cap(cfg.holoColor, "cyan"), on: false });
                 toggles.push({ key: "holoMotion", label: "Motion", on: cfg.holoMotion });
                 toggles.push({ key: "holoGlitch", label: "Glitch", on: cfg.holoGlitch });
                 toggles.push({ key: "holoOpacity", label: "Alpha: " + Math.round(cfg.holoOpacity * 100) + "%", on: false });
                 toggles.push({ key: "holoBase", label: "Base", on: cfg.holoBase });
-            }
-            if (skinName === "foil") {
-                toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
-                toggles.push({ key: "foilMotion", label: "Motion", on: cfg.foilMotion });
-                toggles.push({ key: "foilTilt", label: "Tilt", on: cfg.foilTilt });
             }
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
             toggles.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
@@ -217,7 +221,7 @@ ShellRoot {
         // name when the skin has it.
         readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
                                             "holoColor", "holoMotion", "holoGlitch", "holoOpacity", "holoBase",
-                                            "foilStyle", "foilMotion", "foilTilt"]
+                                            "foilStyle", "lightMotion", "lightTilt"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
                 if (item[key] !== undefined)
@@ -228,7 +232,7 @@ ShellRoot {
         readonly property bool showDeck: cfg.showDeck
 
         // "ring" = the wave wraps around the disc. "bar" = it runs straight
-        // inside the controls overlay, and only shows up on hover.
+        // inside the controls overlay, and only shows up with them.
         readonly property string progressStyle: cfg.progressStyle
 
         // A square-faced skin can't wear the ring around it, so there the
@@ -417,6 +421,12 @@ ShellRoot {
         readonly property bool docked: dockX !== 0 || dockY !== 0
         property bool expanded: false
         readonly property bool collapsed: docked && !expanded
+
+        // The transport controls, shown by a click and hidden by another,
+        // or by the pointer leaving. Hovering is left to the skin:
+        // the flat ones tilt toward the pointer, and the controls would
+        // cover what's tilting.
+        property bool controlsOpen: false
 
         // Sends it to the nearest edge and hides it, or brings it back out.
         // A docked widget that was tapped open just hides again; one that's
@@ -821,9 +831,9 @@ ShellRoot {
                                     item.accent = Qt.binding(() => accent.accent);
                                 if (item.shellOpacity !== undefined)
                                     item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
-                                // The back keeps the front's frame (the CRT's bezel).
-                                if (item.showBezel !== undefined)
-                                    item.showBezel = Qt.binding(() => cfg.showBezel);
+                                // The back keeps the front's own options: the
+                                // CRT's bezel, the hologram's colour and base.
+                                win.bindFlatOptions(item);
                             }
                         }
 
@@ -909,7 +919,7 @@ ShellRoot {
                     circular: win.faceIsCircle
                     showTransport: !(skinLoader.item && skinLoader.item.ownTransport === true)
                     source: source
-                    shown: hover.hovered && !win.collapsed && !win.flipped
+                    shown: win.controlsOpen && !win.collapsed && !win.flipped
                     showProgress: !win.ringStyle
                 }
             }
@@ -956,6 +966,7 @@ ShellRoot {
             id: hover
             cursorShape: win.ringPreview >= 0 || controls.barPreview >= 0
                 ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onHoveredChanged: if (!hovered) win.controlsOpen = false
         }
 
         WheelHandler {
@@ -963,18 +974,20 @@ ShellRoot {
             onWheel: (event) => source.nudgeVolume(event.angleDelta.y > 0 ? 0.05 : -0.05)
         }
 
-        // A tap on the docked sliver pulls it out. Once open, a double click
-        // on the disc's rim flips it and shows the track info card. A single
-        // click used to, and it kept happening by accident: grabbing it to
-        // move it, missing a button. The center doesn't count either way,
-        // that's where the transport buttons live. To hide it again, right
-        // click; see `toggleDock`.
+        // A tap on the docked sliver pulls it out. Once open, a click shows
+        // or hides the controls, at once: no waiting to see whether a second
+        // one follows. When it does, the second takes the first back and
+        // flips the widget to show the track info card. While the controls
+        // are up the center doesn't count, that's where the transport
+        // buttons live. To hide it against an edge, right click; see
+        // `toggleDock`.
         TapHandler {
             acceptedButtons: Qt.RightButton
             onTapped: win.toggleDock()
         }
 
         TapHandler {
+            property bool wasOpen: false
             onTapped: (point) => {
                 if (win.collapsed) {
                     win.expanded = true;
@@ -1007,17 +1020,28 @@ ShellRoot {
                 }
 
                 // Outside the buttons' zone, which lives at the face's
-                // center. Measured as a fraction of the face so it works the
-                // same on a disc as on a rectangular case.
+                // center while the controls are up. Measured as a fraction of
+                // the face so it works the same on a disc as on a
+                // rectangular case.
                 const cx = stage.x + win.face.x + win.face.width / 2;
                 const cy = stage.y + win.face.y + win.face.height / 2;
                 const dx = (point.position.x - cx) / win.face.width;
                 const dy = (point.position.y - cy) / win.face.height;
-                if (Math.sqrt(dx * dx + dy * dy) <= 0.40)
-                    return;
-
-                if (tapCount >= 2)
+                // Judged by whether they were up before the first click of
+                // a pair: that click opens them, and the second would
+                // otherwise land on the buttons it just put there.
+                const inCenter = Math.sqrt(dx * dx + dy * dy) <= 0.40;
+                if (tapCount >= 2) {
+                    if (wasOpen && inCenter)
+                        return;
+                    win.controlsOpen = wasOpen;
                     win.flipped = !win.flipped;
+                    return;
+                }
+                wasOpen = win.controlsOpen;
+                if (wasOpen && inCenter)
+                    return;
+                win.controlsOpen = !win.controlsOpen;
             }
         }
 
@@ -1217,8 +1241,9 @@ ShellRoot {
                 // track's photo left underneath. Hologram: its colour ("cyan",
                 // "green", "pink", "amber", "art"), motion, dropouts and
                 // how solid it is (1, 0.75, 0.5).
-                // Foil: its finish ("rainbow", "gold", "silver", "art"),
-                // drift and tilt.
+                // Foil: its finish ("rainbow", "gold", "silver", "art").
+                // Every skin: the light (a tilt, a glint, a sheen) drifting
+                // on its own while playing, and following the pointer.
                 property int pixels: 64
                 property int columns: 32
                 property bool colored: true
@@ -1231,8 +1256,8 @@ ShellRoot {
                 property real holoOpacity: 1
                 property bool holoBase: true
                 property string foilStyle: "rainbow"
-                property bool foilMotion: true
-                property bool foilTilt: true
+                property bool lightMotion: true
+                property bool lightTilt: true
 
                 // Edge it's docked to and hidden against: "", "left",
                 // "right", "top" or "bottom". Set by right clicking it.

@@ -17,6 +17,9 @@ Item {
     // gets drawn over it (the track info card) is white text, so this goes
     // dark instead. The sheen staying on top is what still reads as a CD.
     property bool blank: false
+    // LightDriver's, for the sheen to turn toward the pointer.
+    property bool following: false
+    property real heading: 0
 
     // On DiscFace's 1000-unit canvas, not in pixels.
     readonly property int holeRadius: 62
@@ -77,6 +80,9 @@ Item {
         opacity: cd.blank ? 0.45 : 1
         holeRadius: cd.size * cd.holeRadius / 1000
         startAngle: 200
+        following: cd.following
+        heading: cd.heading
+        peak: 0.14   // the near-white core
 
         sweep: Gradient {
             GradientStop { position: 0.00; color: Qt.rgba(1.00, 1.00, 1.00, 0.00) }

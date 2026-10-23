@@ -27,6 +27,9 @@ Item {
 
     // Back side: an unprinted disc for the track info to sit on.
     property bool blankLabel: false
+    // The sheen turning with the pointer. Room light doesn't drift on its
+    // own, so there's no lightMotion here.
+    property bool lightTilt: true
 
     readonly property real boxFactor: 1.02
     readonly property rect faceRect: Qt.rect((width - size) / 2,
@@ -35,6 +38,15 @@ Item {
 
     implicitWidth: Math.round(size * boxFactor)
     implicitHeight: implicitWidth
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: false
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
 
     SpinDriver {
         id: spin
@@ -48,5 +60,7 @@ Item {
         artUrl: skin.artUrl
         angle: spin.angle
         blank: skin.blankLabel
+        following: light.following
+        heading: light.heading
     }
 }

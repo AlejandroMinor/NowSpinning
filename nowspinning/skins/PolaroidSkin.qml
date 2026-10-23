@@ -4,10 +4,18 @@
 // Ported from HyprFlow's media panel skins. The back, for the track info,
 // is the photo turned over: blank, dark enough for the white text.
 //
+// The front photo sways a little while playing and turns toward the
+// pointer, with a glare sliding across its glossy print. The one under it
+// stays flat on the table.
+//
+// Options: lightMotion (the sway on its own) and lightTilt (turning toward
+// the pointer).
+//
 // See VinylSkin.qml for the skin contract. On top of the usual subset, this
 // one reads the optional `title`.
 import QtQuick
 import QtQuick.Effects
+import "../parts"
 
 Item {
     id: skin
@@ -22,6 +30,8 @@ Item {
     // skin made again (a panel reopened) starts its stack with them.
     property string previousArt: ""
     property string previousTitle: ""
+    property bool lightMotion: true  // the front photo swaying on its own
+    property bool lightTilt: true    // the front photo turning toward the pointer
 
     FontLoader { id: marker; source: Qt.resolvedUrl("../fonts/PermanentMarker-Regular.ttf") }
 
@@ -48,6 +58,15 @@ Item {
     // The photo underneath sticks out past the face.
     readonly property bool solidBox: true
 
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
     function drop() {
         // The title can change before the cover, so the caption comes from
         // previousTitle when there is one.
@@ -63,10 +82,19 @@ Item {
         dropIn.restart();
     }
     onArtUrlChanged: if (!blankLabel) drop()
+    // Handed over after the cover (the order bindings land in isn't ours to
+    // pick): an empty stack still takes it.
+    onPreviousArtChanged: {
+        if (!back.art && previousArt && previousArt !== front.art) {
+            back.art = previousArt;
+            back.caption = previousTitle;
+        }
+    }
 
     component Photo: Item {
         property string art
         property string caption
+        property bool glossy: false
         width: skin.frameWidth
         height: skin.frameHeight
         x: (skin.width - width) / 2
@@ -89,12 +117,28 @@ Item {
             width: skin.photo; height: skin.photo
             color: "#202020"
             visible: !skin.blankLabel
+            clip: true
             Image {
                 anchors.fill: parent
                 source: parent.parent.art
                 fillMode: Image.PreserveAspectCrop
                 sourceSize { width: 300; height: 300 }
                 asynchronous: true
+            }
+            // Glare on the print, slid across by the light.
+            Rectangle {
+                visible: parent.parent.glossy
+                width: skin.photo * 0.5
+                height: skin.photo * 3
+                x: skin.photo * 0.25 + light.lightX * skin.photo * 0.8
+                y: -skin.photo + light.lightY * skin.photo * 0.3
+                rotation: 32
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0) }
+                    GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.22) }
+                    GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0) }
+                }
             }
         }
         Text {
@@ -111,13 +155,22 @@ Item {
 
     Photo {
         id: back
-        visible: skin.showStack && art !== ""
+        // On the back there's no cover to stack, but the pile is still
+        // there, turned over with the rest.
+        visible: skin.showStack && (art !== "" || skin.blankLabel)
         rotation: -skin.tilt * 1.6
     }
     Photo {
         id: front
         caption: skin.title
         rotation: skin.tilt
+        glossy: true
+        // Turns toward the light, a little less than the foil card: a
+        // photo, not a card held up to it.
+        transform: [
+            Tilt { target: front; amount: light.lightX; degrees: 6 },
+            Tilt { target: front; amount: light.lightY; degrees: 6; vertical: true }
+        ]
     }
 
     ParallelAnimation {

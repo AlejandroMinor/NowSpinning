@@ -18,6 +18,7 @@
 // `ownsPoint`.
 import QtQuick
 import ".."
+import "../parts"
 
 Item {
     id: skin
@@ -29,6 +30,8 @@ Item {
     property color accent: "white"
     property real shellOpacity: 1
     property bool blankLabel: false
+    property bool lightMotion: true  // swaying on its own
+    property bool lightTilt: true    // turning toward the pointer
 
     // MprisSource, set by the window; the keys call straight into it.
     property var player: null
@@ -59,6 +62,21 @@ Item {
     readonly property rect pane: Qt.rect(w * 0.05, h * 0.06, w * 0.90, h * 0.70)
     readonly property real keysY: h * 0.80
     readonly property real keysH: h * 0.15
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: Qt.rect(0, 0, skin.w, skin.h)
+    }
+
+    // Turns toward the light, a little less than the foil card.
+    transform: [
+        Tilt { target: skin; amount: light.lightX; degrees: 7 },
+        Tilt { target: skin; amount: light.lightY; degrees: 7; vertical: true }
+    ]
 
     function ownsPoint(px, py) {
         return py >= keysY && py <= keysY + keysH
@@ -149,6 +167,9 @@ Item {
         shellOpacity: skin.shellOpacity
         blankLabel: skin.blankLabel
         spinDegreesPerSecond: skin.spinDegreesPerSecond
+        // Held in the player: it doesn't move on its own.
+        lightMotion: false
+        lightTilt: false
     }
 
     // Smoked glass over it: a faint tint and a diagonal glare.
@@ -163,17 +184,29 @@ Item {
         border.width: Math.max(1, skin.w * 0.005)
         border.color: Qt.rgba(1, 1, 1, 0.10)
 
-        Rectangle {
+        // The glare, slid across the glass by the light: a broad band and
+        // a thin one trailing it.
+        Item {
             anchors.fill: parent
-            radius: parent.radius
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.00; color: Qt.rgba(1, 1, 1, 0.00) }
-                GradientStop { position: 0.18; color: Qt.rgba(1, 1, 1, 0.10) }
-                GradientStop { position: 0.30; color: Qt.rgba(1, 1, 1, 0.00) }
-                GradientStop { position: 0.70; color: Qt.rgba(1, 1, 1, 0.00) }
-                GradientStop { position: 0.78; color: Qt.rgba(1, 1, 1, 0.05) }
-                GradientStop { position: 0.86; color: Qt.rgba(1, 1, 1, 0.00) }
+            clip: true
+
+            Repeater {
+                model: [[0.30, 0.10, 0.0], [0.10, 0.05, 0.42]]
+
+                Rectangle {
+                    required property var modelData
+                    width: skin.pane.width * modelData[0]
+                    height: skin.pane.height * 3
+                    x: skin.pane.width * (0.12 + modelData[2]) + light.lightX * skin.pane.width * 0.45
+                    y: -skin.pane.height
+                    rotation: 24
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0) }
+                        GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, modelData[1]) }
+                        GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0) }
+                    }
+                }
             }
         }
     }

@@ -20,6 +20,9 @@ Item {
     property color accent: "white"
     property bool showArm: false
     property bool blankLabel: false
+    // The sheen turning with the pointer. Room light doesn't drift on its
+    // own, so there's no lightMotion here.
+    property bool lightTilt: true
 
     property real spinDegreesPerSecond: 13
 
@@ -39,6 +42,15 @@ Item {
     // On DiscFace's 1000-unit canvas: 38mm hole and 89mm label on a 175mm disc.
     readonly property int hole: 108
     readonly property int label: 508
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: false
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
 
     SpinDriver {
         id: spin
@@ -117,6 +129,9 @@ Item {
         Sheen {
             anchors.fill: parent
             holeRadius: skin.size * skin.hole / 1000
+            startAngle: 24
+            following: light.following
+            heading: light.heading
         }
 
         Tonearm {

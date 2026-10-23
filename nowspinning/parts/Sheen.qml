@@ -3,6 +3,10 @@
 //
 // Conical, because on a disc the light sweeps at an angle, not in a straight
 // line. The mask is a ring so the sheen never paints over the center hole.
+//
+// While `following`, it turns, all the way round, to put its brightest
+// stop (`peak`) toward `heading`: the pointer, standing in for the light.
+// Otherwise it rests at `startAngle`.
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
@@ -10,7 +14,16 @@ Item {
     id: sheen
 
     property real holeRadius: 0     // in pixels, not in the 1000-unit canvas
-    property int startAngle: 24
+    property real startAngle: 24
+    property bool following: false
+    property real heading: 0     // LightDriver's
+    property real peak: 0.12     // where the brightest stop sits, 0..1 round
+
+    readonly property real aim: following ? heading - peak * 360 : startAngle
+    // Unwrapped, so going from 350 to 10 turns 20 degrees, not back 340.
+    property real turned: startAngle
+    onAimChanged: turned += ((aim - turned) % 360 + 540) % 360 - 180
+    Behavior on turned { SmoothedAnimation { duration: 200; velocity: -1 } }
 
     property Gradient sweep: Gradient {
         GradientStop { position: 0.00; color: Qt.rgba(0.75, 0.79, 0.85, 0.00) }
@@ -34,7 +47,7 @@ Item {
 
     ConicalGradient {
         anchors.fill: parent
-        angle: sheen.startAngle
+        angle: sheen.turned
         source: mask
         cached: true
         gradient: sheen.sweep

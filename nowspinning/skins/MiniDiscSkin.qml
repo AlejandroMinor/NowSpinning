@@ -31,6 +31,9 @@ Item {
     // Back side: no label printed, dark enough for the track info's text.
     property bool blankLabel: false
 
+    property bool lightMotion: true  // swaying on its own
+    property bool lightTilt: true    // turning toward the pointer
+
     readonly property bool supportsFullArt: false
     property bool artFull: false
 
@@ -64,6 +67,21 @@ Item {
     Behavior on open {
         NumberAnimation { duration: 520; easing.type: Easing.InOutCubic }
     }
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
+    // Turns toward the light, as much as the foil card.
+    transform: [
+        Tilt { target: skin; amount: light.lightX; degrees: 9 },
+        Tilt { target: skin; amount: light.lightY; degrees: 9; vertical: true }
+    ]
 
     SpinDriver {
         id: spin
@@ -278,6 +296,8 @@ Item {
             Sheen {
                 anchors.fill: parent
                 startAngle: 200
+                following: light.following
+                heading: light.headingFrom(skin.discCenter.x, skin.discCenter.y)
                 holeRadius: 0
             }
         }
@@ -341,5 +361,12 @@ Item {
         radius: skin.w * 0.01
         color: Qt.darker(skin.plastic, 1.6)
         antialiasing: true
+    }
+
+    // A glint across the cartridge, as on the foil card. Clipped to its
+    // box; the chamfered corner doesn't show it at this strength.
+    Glint {
+        lightX: light.lightX
+        strength: skin.blankLabel ? 0.08 : 0.22
     }
 }

@@ -3,9 +3,12 @@
 // Ported from HyprFlow's media panel skins. The back, for the track info,
 // is the empty grid.
 //
+// Sways while playing and turns toward the pointer, like the foil card.
+//
 // See VinylSkin.qml for the skin contract.
 import QtQuick
 import Quickshell.Widgets
+import "../parts"
 
 Item {
     id: skin
@@ -15,6 +18,8 @@ Item {
     property bool playing: false
     property bool blankLabel: false
     property int pixels: 64  // squares a side
+    property bool lightMotion: true  // swaying on its own
+    property bool lightTilt: true    // turning toward the pointer
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -24,6 +29,20 @@ Item {
 
     implicitWidth: size
     implicitHeight: size
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
+    transform: [
+        Tilt { target: skin; amount: light.lightX; degrees: 9 },
+        Tilt { target: skin; amount: light.lightY; degrees: 9; vertical: true }
+    ]
 
     ClippingRectangle {
         anchors.fill: parent

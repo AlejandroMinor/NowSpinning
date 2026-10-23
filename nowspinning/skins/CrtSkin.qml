@@ -10,6 +10,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import Quickshell.Widgets
+import "../parts"
 
 Item {
     id: skin
@@ -19,6 +20,8 @@ Item {
     property bool playing: false
     property bool blankLabel: false
     property bool showBezel: true
+    property bool lightMotion: true  // the glare drifting on its own
+    property bool lightTilt: true    // turning toward the pointer, barely
     property string effect: "random"  // or one of effects
     readonly property var effects: ["slices", "roll", "static", "split", "channel"]
 
@@ -37,6 +40,21 @@ Item {
     readonly property real inset: showBezel ? size * 0.07 : 0
     property real splitBoost: 0  // the split glitch pulls the fringes apart
     readonly property real shift: size * 0.012 + splitBoost  // colour fringe offset
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
+
+    // A heavy set: it hardly turns. The glare on the glass does the work.
+    transform: [
+        Tilt { target: skin; amount: light.lightX; degrees: 2.5 },
+        Tilt { target: skin; amount: light.lightY; degrees: 2.5; vertical: true }
+    ]
 
     // The bezel: a dark plastic frame around the glass.
     Rectangle {
@@ -274,6 +292,22 @@ Item {
                 orientation: Gradient.Vertical
                 GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.1) }
                 GradientStop { position: 0.35; color: "transparent" }
+            }
+        }
+
+        // A glint on the curved glass, slid along by the light. Faint on
+        // the set switched off too: the glass is still there.
+        Rectangle {
+            width: screen.width * 0.28
+            height: screen.height * 3
+            x: screen.width * 0.36 + light.lightX * screen.width * 0.55
+            y: -screen.height + light.lightY * screen.height * 0.2
+            rotation: 28
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0) }
+                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.09) }
+                GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0) }
             }
         }
     }

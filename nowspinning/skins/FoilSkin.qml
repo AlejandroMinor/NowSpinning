@@ -10,13 +10,14 @@
 //
 // Options: foilStyle (rainbow, gold, silver, art for a sweep around the
 // cover's own colour, or a "#rrggbb" to sweep around; anything else falls
-// back to the rainbow), foilMotion (the foil sliding on its own) and
-// foilTilt (the card turning toward the pointer).
+// back to the rainbow), lightMotion (the foil sliding on its own) and
+// lightTilt (the card turning toward the pointer).
 //
 // See VinylSkin.qml for the skin contract. On top of the usual subset, this
 // one reads the optional `title` and `accent`.
 import QtQuick
 import QtQuick.Effects
+import "../parts"
 
 Item {
     id: skin
@@ -30,8 +31,8 @@ Item {
 
     // Options, bound to config keys of the same name by the window.
     property string foilStyle: "rainbow"  // rainbow | gold | silver | art | "#rrggbb"
-    property bool foilMotion: true        // the foil sliding on its own
-    property bool foilTilt: true          // the card turning toward the pointer
+    property bool lightMotion: true       // the foil sliding on its own
+    property bool lightTilt: true         // the card turning toward the pointer
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -76,20 +77,17 @@ Item {
 
     // Where the light hits, -1..1 across the card. Drifts on its own while
     // playing; follows the pointer while it's over the card.
-    property real drift: 0
-    SequentialAnimation on drift {
-        running: skin.playing && skin.foilMotion && !(skin.foilTilt && hover.hovered)
-        loops: Animation.Infinite
-        NumberAnimation { to: 1; duration: 3200; easing.type: Easing.InOutSine }
-        NumberAnimation { to: -1; duration: 3200; easing.type: Easing.InOutSine }
-    }
-    readonly property bool following: foilTilt && hover.hovered
-    readonly property real lightX: following
-        ? Math.max(-1, Math.min(1, (hover.point.position.x - card.x) / card.width * 2 - 1)) : drift
-    readonly property real lightY: following
-        ? Math.max(-1, Math.min(1, (hover.point.position.y - card.y) / card.height * 2 - 1)) : 0
+    readonly property real lightX: light.lightX
+    readonly property real lightY: light.lightY
 
-    HoverHandler { id: hover }
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: skin.lightMotion
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
 
     Item {
         id: card
@@ -101,18 +99,8 @@ Item {
         // Tilts toward the light. Only a few degrees: more and the card
         // reads as falling over.
         transform: [
-            Rotation {
-                origin.x: card.width / 2; origin.y: card.height / 2
-                axis { x: 0; y: 1; z: 0 }
-                angle: skin.lightX * 9
-                Behavior on angle { NumberAnimation { duration: 180 } }
-            },
-            Rotation {
-                origin.x: card.width / 2; origin.y: card.height / 2
-                axis { x: 1; y: 0; z: 0 }
-                angle: -skin.lightY * 9
-                Behavior on angle { NumberAnimation { duration: 180 } }
-            }
+            Tilt { target: card; amount: skin.lightX; degrees: 9 },
+            Tilt { target: card; amount: skin.lightY; degrees: 9; vertical: true }
         ]
 
         layer.enabled: true

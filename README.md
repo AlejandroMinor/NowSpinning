@@ -1,6 +1,6 @@
 # NowSpinning
 
-A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card), with transport controls on hover.
+A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card), with transport controls a click away.
 
 ![Every skin, playing the same track](docs/skins.webp)
 
@@ -96,8 +96,8 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `holoOpacity` | `1` | Hologram skin only: how solid the projection is, `1`, `0.75` or `0.5` |
 | `holoBase` | `true` | Hologram skin only: the emitter and its beam underneath. `false` drops them and the projection grows into the room they took |
 | `foilStyle` | `"rainbow"` | Foil skin only: the finish, `"rainbow"`, `"gold"`, `"silver"`, `"art"` for a sweep around the cover's own colour, or a hex colour like `"#ff8800"` to sweep around that one. Anything else falls back to the rainbow. The settings card steps through the named ones |
-| `foilMotion` | `true` | Foil skin only: the foil sliding across the card on its own while playing |
-| `foilTilt` | `true` | Foil skin only: the card turning toward the pointer, with the foil following it |
+| `lightMotion` | `true` | The skin's light (a tilt, a glint, the foil) drifting on its own while playing. The discs don't have it: room light stays put |
+| `lightTilt` | `true` | The skin's light following the pointer: the flat skins and the tapes turn toward it, the discs' sheen turns with it, the glare slides across the glass |
 | `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
 | `preferredPlayer` | `"org.mpris.MediaPlayer2.spotify"` | MPRIS bus name that wins when more than one player is running, even while paused. Empty string means no preference, so whichever player is actually playing wins instead |
 | `x`, `y` | `-1` | Saved position; `-1` means "use `anchor`". Overwritten automatically when dragged |
@@ -106,11 +106,11 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 - **Drag** anywhere on the disc to move it. It never docks or snaps: it stays exactly where you let go, even right up against an edge.
 - **Right click** to dock it: it slides to the nearest screen edge and hides there, leaving a sliver showing. Right click the sliver to bring it back out for good, or tap it to peek; while peeking, a right click hides it again. Dragging a docked widget undocks it.
-- **Double click the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time. Double click again to flip it back. A single click does nothing there, so it can't flip by accident.
+- **Double click** to reveal the track info: title, artist, album, elapsed time. Double click again to flip it back. While the controls are up, the buttons in the center don't count.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
-- **Hover** to reveal transport controls (previous / play-pause / next), and a gear below them. The gear opens a settings card beside the widget (on whichever side has room): pick the skin from live previews of each, the size, and the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the flat skins' own, the tint from the cover art). It stays open until the gear or its ✕ close it. Changes save to `config.json` at once, and the widget grows or shrinks around its center.
-- **The ✕** in the hover controls' top corner closes the widget. It takes two clicks: the first turns it red, the second, within two seconds, closes. Run `nowspinning` again to bring it back.
+- **Click** to show transport controls (previous / play-pause / next), and a gear below them; another click, or moving the pointer away, hides them. Hovering is left to the skin: the light follows the pointer, tilting the flat ones and the tapes, turning the sheen on the discs, sliding the glare on the glass. The gear opens a settings card beside the widget (on whichever side has room): pick the skin from live previews of each, the size, and the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the flat skins' own, the tint from the cover art). It stays open until the gear or its ✕ close it. Changes save to `config.json` at once, and the widget grows or shrinks around its center.
+- **The ✕** in the controls' top corner closes the widget. It takes two clicks: the first turns it red, the second, within two seconds, closes. Run `nowspinning` again to bring it back.
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 

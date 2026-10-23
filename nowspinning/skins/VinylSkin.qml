@@ -110,6 +110,9 @@ Item {
     // back side: it leaves room for text while keeping the grooves visible
     // around it.
     property bool blankLabel: false
+    // The sheen turning with the pointer. Room light doesn't drift on its
+    // own, so there's no lightMotion here.
+    property bool lightTilt: true
 
     readonly property real r: size / 2
 
@@ -137,6 +140,15 @@ Item {
 
     implicitWidth: Math.round(boxW)
     implicitHeight: Math.round(boxH)
+
+    LightDriver {
+        id: light
+        anchors.fill: parent
+        playing: skin.playing
+        motion: false
+        follow: skin.lightTilt
+        area: skin.faceRect
+    }
 
     SpinDriver {
         id: spin
@@ -180,6 +192,9 @@ Item {
         Sheen {
             anchors.fill: parent
             holeRadius: skin.size * disc.holeRadius / disc.canvas
+            startAngle: 24
+            following: light.following
+            heading: light.heading
         }
 
         // On the deck the arm gets a proper bearing, set further out so it
