@@ -32,6 +32,25 @@ QtObject {
     readonly property string artUrl:  current
         ? (current.trackArtUrl || youtubeThumb(current.metadata["xesam:url"] ?? "")) : ""
     readonly property string title:   current ? current.trackTitle : ""
+
+    // The last track's cover and title, for skins that show it (the
+    // Polaroid's stack) and may be made again mid-track.
+    property string previousArtUrl: ""
+    property string previousTitle: ""
+    property string lastArtUrl: ""
+    property string lastTitle: ""
+    onArtUrlChanged: {
+        if (lastArtUrl && artUrl && artUrl !== lastArtUrl)
+            previousArtUrl = lastArtUrl;
+        if (artUrl)
+            lastArtUrl = artUrl;
+    }
+    onTitleChanged: {
+        if (lastTitle && title && title !== lastTitle)
+            previousTitle = lastTitle;
+        if (title)
+            lastTitle = title;
+    }
     readonly property string artist:  current ? current.trackArtist : ""
 
     readonly property string album: current ? current.trackAlbum : ""

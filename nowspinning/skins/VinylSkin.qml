@@ -50,6 +50,8 @@
 //                                         or white when there isn't one
 //   property string title                 the track's title, for a skin that
 //                                         writes it on the object (the Polaroid)
+//   property string previousArt           the last track's cover and title, for
+//   property string previousTitle         a skin that shows it (the Polaroid's stack)
 //   property var player                   the MprisSource, for a skin with
 //                                         working controls of its own
 //   readonly property bool ownTransport   it has its own transport keys, so the

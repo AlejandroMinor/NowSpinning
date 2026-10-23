@@ -18,6 +18,10 @@ Item {
     property string title: ""
     property bool blankLabel: false
     property bool showStack: true  // the last photo peeking out underneath
+    // The last track's cover and title, from whoever outlives the skin: a
+    // skin made again (a panel reopened) starts its stack with them.
+    property string previousArt: ""
+    property string previousTitle: ""
 
     FontLoader { id: marker; source: Qt.resolvedUrl("../fonts/PermanentMarker-Regular.ttf") }
 
@@ -43,9 +47,14 @@ Item {
     readonly property bool solidBox: true
 
     function drop() {
+        // The title can change before the cover, so the caption comes from
+        // previousTitle when there is one.
         if (front.art) {
             back.art = front.art;
-            back.caption = front.caption;
+            back.caption = previousTitle || front.caption;
+        } else if (previousArt) {
+            back.art = previousArt;
+            back.caption = previousTitle;
         }
         tilt = -tilt;
         front.art = artUrl;

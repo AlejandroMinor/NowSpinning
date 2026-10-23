@@ -630,6 +630,10 @@ ShellRoot {
                                     item.player = source;
                                 if (item.title !== undefined)
                                     item.title = Qt.binding(() => source.title);
+                                if (item.previousArt !== undefined) {
+                                    item.previousArt = Qt.binding(() => source.previousArtUrl);
+                                    item.previousTitle = Qt.binding(() => source.previousTitle);
+                                }
                                 win.bindFlatOptions(item);
 
                                 // A skin that starts closed needs a bump to
