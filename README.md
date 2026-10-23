@@ -75,7 +75,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `dragGain` | `0.45` | How tightly dragging tracks the cursor; see Limitations |
 | `shellOpacity` | `1` | Cassette skin only: how solid its plastic is. Lower it for a clear shell (around `0.45`): the desktop shows through, and so does the tape inside, running around the rollers. The label stays solid; `discOpacity` fades the whole widget instead |
 | `tintFromArt` | `true` | Color the progress indicator, the volume bar, and the cassette's plastic with a color picked out of the cover art. Covers without much color in them stay white |
-| `edgeMagnet` | `0.05` | Width of the magnetic zone along each screen edge, as a fraction of the disc. Dropping the widget inside it docks it to that edge. `0` turns the magnet off, and the widget stays wherever you drop it |
+| `dock` | `""` | Edge the widget is docked to and hidden against: `"left"`, `"right"`, `"top"`, `"bottom"`, or `""` for none. Set by right clicking it; see Usage. Replaces `edgeMagnet`, which is no longer read |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
 | `peekSide` | `"right"` | CD skin only: which edge of the case the disc pokes out from. `"right"`, `"left"`, `"top"`, or `"bottom"`. Independent of `anchor`; combine freely |
 | `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
@@ -84,12 +84,12 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 ## Usage
 
-- **Drag** anywhere on the disc to move it.
-- **Drop near a screen edge** to dock and auto-hide it, leaving a sliver showing. Tap the sliver to bring it back out.
+- **Drag** anywhere on the disc to move it. It never docks or snaps: it stays exactly where you let go, even right up against an edge.
+- **Right click** to dock it: it slides to the nearest screen edge and hides there, leaving a sliver showing. Right click the sliver to bring it back out for good, or tap it to peek; while peeking, a right click hides it again. Dragging a docked widget undocks it.
 - **Tap the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
-- **Hover** to reveal transport controls (previous / play-pause / next).
+- **Hover** to reveal transport controls (previous / play-pause / next)
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 

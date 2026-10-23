@@ -166,31 +166,81 @@ ShellRoot {
         // The ring only makes sense around a round face.
         readonly property bool ringUsable: faceIsCircle
 
+        // A skin whose whole box is solid (the vinyl on its turntable) is
+        // grabbed and hidden as that box, not as its round face: otherwise
+        // the plinth around the record lets clicks fall straight through,
+        // and stays on screen when the widget hides against an edge.
+        readonly property bool solidBox:
+            skinLoader.item ? skinLoader.item.solidBox === true : false
+        readonly property bool roundHit: faceIsCircle && !solidBox
+        readonly property rect body: solidBox ? Qt.rect(0, 0, boxW, boxH) : face
+
         // How much of the disc still peeks out once it's docked to an edge.
         readonly property int peek: Math.round(discSize * 0.18)
 
         // How far the content has to shift so only `peek` keeps showing.
-        // Measured against the skin's face, which isn't necessarily centered.
+        // Measured against the skin's body, which isn't necessarily centered.
         readonly property int hideShiftX: dockX < 0
-            ? Math.round(face.x + face.width - peek)
-            : Math.round(boxW - face.x - peek)
+            ? Math.round(body.x + body.width - peek)
+            : Math.round(boxW - body.x - peek)
         readonly property int hideShiftY: dockY < 0
-            ? Math.round(face.y + face.height - peek)
-            : Math.round(boxH - face.y - peek)
+            ? Math.round(body.y + body.height - peek)
+            : Math.round(boxH - body.y - peek)
 
         // ---------------------------------------------------------------
         // Docking to an edge
         // ---------------------------------------------------------------
-        // Magnetic zone around the edges. Releasing a drag inside it snaps
-        // the widget to that edge and hides it; with a hard 4px threshold
-        // you had to drop it exactly on the pixel, which felt fiddly. Too
-        // wide is worse the other way, though: the snap is a jump of the
-        // whole zone's width, so a big zone means letting go anywhere near
-        // an edge yanks the widget somewhere you didn't put it. As a
-        // fraction of the disc, so it means the same thing at every size,
-        // and `0` turns the magnet off and leaves the drop where you left it.
-        readonly property int edgeSlack:
-            Math.round(discSize * Math.max(0, cfg.edgeMagnet))
+        // Docked is its own state, set on purpose with a right click, not
+        // something worked out from where the widget happens to be. It used
+        // to be: dropping a drag inside a magnetic zone along the edges
+        // snapped it flush and hid it, so just moving it somewhere near an
+        // edge made it jump the rest of the way and vanish. Now a drag only
+        // ever moves it, and it lands exactly where it's let go.
+        //
+        // "" (not docked), "left", "right", "top" or "bottom".
+        readonly property string dock: cfg.dock
+        readonly property int dockX: dock === "left" ? -1 : (dock === "right" ? 1 : 0)
+        readonly property int dockY: dock === "top" ? -1 : (dock === "bottom" ? 1 : 0)
+
+        readonly property bool docked: dockX !== 0 || dockY !== 0
+        property bool expanded: false
+        readonly property bool collapsed: docked && !expanded
+
+        // Sends it to the nearest edge and hides it, or brings it back out.
+        // A docked widget that was tapped open just hides again; one that's
+        // hidden comes out undocked, flush against the edge it was on.
+        function toggleDock() {
+            if (docked && expanded) {
+                expanded = false;
+                return;
+            }
+            if (docked) {
+                posX = placedX;
+                posY = placedY;
+                cfg.x = Math.round(posX);
+                cfg.y = Math.round(posY);
+                cfg.dock = "";
+                expanded = false;
+                configFile.writeAdapter();
+                return;
+            }
+            const sw = screen ? screen.width : 1920;
+            const sh = screen ? screen.height : 1080;
+            const gaps = [
+                { side: "left", gap: placedX },
+                { side: "right", gap: sw - boxW - placedX },
+                { side: "top", gap: placedY },
+                { side: "bottom", gap: sh - boxH - placedY }
+            ];
+            gaps.sort((a, b) => a.gap - b.gap);
+            // The position along the edge is kept, so it comes back out
+            // where it went in.
+            cfg.x = Math.round(placedX);
+            cfg.y = Math.round(placedY);
+            cfg.dock = gaps[0].side;
+            expanded = false;
+            configFile.writeAdapter();
+        }
 
         // Position, as margins from the top-left corner.
         // Real numbers, not integers: dragging accumulates fractional
@@ -203,8 +253,6 @@ ShellRoot {
         // The first time it's dragged, this binding breaks on its own and
         // the position starts coming from the mouse instead; that gets
         // saved as x/y, and from then on the anchor is never consulted again.
-        // Deliberately not tied to `edgeSlack`: turning the magnet down
-        // shouldn't also start the widget flush against the screen edge.
         readonly property real anchorMargin: Math.round(discSize * 0.32)
 
         readonly property real anchorX: {
@@ -234,18 +282,6 @@ ShellRoot {
         property real posX: cfg.x >= 0 ? cfg.x : anchorX
         property real posY: cfg.y >= 0 ? cfg.y : anchorY
 
-        // Only the snap on release is animated. During a drag the position
-        // is already being driven a frame at a time, and easing it there
-        // would just add lag on top of the compositor's own.
-        Behavior on posX {
-            enabled: !dragger.active
-            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
-        }
-        Behavior on posY {
-            enabled: !dragger.active
-            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
-        }
-
         // A saved position belongs to the output it was dragged on. Move to
         // a narrower one, or one that's mounted vertically, and those same
         // coordinates land past its edge: the compositor has nowhere to put
@@ -254,10 +290,8 @@ ShellRoot {
         // where it's stored: `posX` stays whatever was saved, ready for the
         // wider output if it comes back, and the widget shows up against the
         // near edge in the meantime.
-        // Landing exactly on the edge would drop it inside the magnet zone,
-        // so it would come back collapsed to a sliver against an edge it was
-        // never docked to, which just reads as "it didn't start". A position
-        // that already fits is left alone, dock and all.
+        // A position that already fits is left alone; one that doesn't comes
+        // back a little way in from the edge, rather than flush against it.
         function place(saved, limit) {
             if (saved >= 0 && saved <= limit)
                 return saved;
@@ -265,19 +299,26 @@ ShellRoot {
                              : Math.max(0, limit - anchorMargin);
         }
 
-        readonly property real placedX:
-            place(posX, (screen ? screen.width : 1920) - boxW)
-        readonly property real placedY:
-            place(posY, (screen ? screen.height : 1080) - boxH)
+        // Docked, the edge wins on its own axis: it stays flush against it
+        // on any output, whatever was saved.
+        property real placedX: dockX < 0 ? 0
+            : dockX > 0 ? (screen ? screen.width : 1920) - boxW
+            : place(posX, (screen ? screen.width : 1920) - boxW)
+        property real placedY: dockY < 0 ? 0
+            : dockY > 0 ? (screen ? screen.height : 1080) - boxH
+            : place(posY, (screen ? screen.height : 1080) - boxH)
 
-        readonly property int dockX: placedX <= edgeSlack ? -1
-            : (screen && placedX + boxW >= screen.width - edgeSlack ? 1 : 0)
-        readonly property int dockY: placedY <= edgeSlack ? -1
-            : (screen && placedY + boxH >= screen.height - edgeSlack ? 1 : 0)
-
-        readonly property bool docked: dockX !== 0 || dockY !== 0
-        property bool expanded: false
-        readonly property bool collapsed: docked && !expanded
+        // Only the trip to the edge on docking is animated. During a drag
+        // the position is already being driven a frame at a time, and
+        // easing it there would just add lag on top of the compositor's own.
+        Behavior on placedX {
+            enabled: !dragger.active
+            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+        }
+        Behavior on placedY {
+            enabled: !dragger.active
+            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+        }
 
         // ---------------------------------------------------------------
         // Data
@@ -328,7 +369,7 @@ ShellRoot {
         // even while open: otherwise opening it from the edge leaves the
         // cursor outside the disc, and hover turns off instantly.
         mask: Region {
-            shape: win.collapsed || !win.faceIsCircle
+            shape: win.collapsed || !win.roundHit
                 ? RegionShape.Rect : RegionShape.Ellipse
             // A rectangular face (the CD) can have parts sticking out past
             // `face` (the disc peeking out of its case): there, the hit area
@@ -343,16 +384,16 @@ ShellRoot {
 
             x: stage.x + (win.collapsed
                 ? (win.dockX > 0 ? win.boxW - win.peek : 0)
-                : (win.faceIsCircle ? win.face.x - grow : 0))
+                : (win.roundHit ? win.face.x - grow : 0))
             y: stage.y + (win.collapsed
                 ? (win.dockY > 0 ? win.boxH - win.peek : 0)
-                : (win.faceIsCircle ? win.face.y - grow : 0))
+                : (win.roundHit ? win.face.y - grow : 0))
             width: win.collapsed && win.dockX !== 0 ? win.peek
                 : (win.collapsed ? win.boxW
-                : (win.faceIsCircle ? win.face.width + 2 * grow : win.boxW))
+                : (win.roundHit ? win.face.width + 2 * grow : win.boxW))
             height: win.collapsed && win.dockY !== 0 ? win.peek
                 : (win.collapsed ? win.boxH
-                : (win.faceIsCircle ? win.face.height + 2 * grow : win.boxH))
+                : (win.roundHit ? win.face.height + 2 * grow : win.boxH))
 
             // The docked sliver still counts even while open against an edge.
             regions: win.docked && !win.collapsed ? [dockStrip] : []
@@ -633,7 +674,12 @@ ShellRoot {
         // A tap on the docked sliver pulls it out. Once open, a tap on the
         // disc's rim flips it and shows the track info card. The center
         // doesn't count, that's where the transport buttons live. To hide
-        // it again, drag it back to an edge; that's where the magnet is.
+        // it again, right click; see `toggleDock`.
+        TapHandler {
+            acceptedButtons: Qt.RightButton
+            onTapped: win.toggleDock()
+        }
+
         TapHandler {
             onTapped: (point) => {
                 if (win.collapsed) {
@@ -689,33 +735,15 @@ ShellRoot {
                     // bigger output; see `placedX`.
                     win.posX = win.placedX;
                     win.posY = win.placedY;
-                    win.expanded = true;   // dragging always reveals it
+                    // Dragging always undocks it: it goes wherever it's
+                    // taken, and only a right click hides it again.
+                    cfg.dock = "";
+                    win.expanded = false;
                 } else {
-                    // Magnet: releasing near an edge snaps it the rest of
-                    // the way there. Worked out into locals first, because
-                    // the snap is animated: reading `win.posX` back right
-                    // after setting it would still give the drop point, and
-                    // that's the value that would get saved.
-                    const sw = win.screen ? win.screen.width : 1920;
-                    const sh = win.screen ? win.screen.height : 1080;
-                    let restX = win.posX;
-                    let restY = win.posY;
-                    if (restX <= win.edgeSlack)
-                        restX = 0;
-                    else if (restX >= sw - win.boxW - win.edgeSlack)
-                        restX = sw - win.boxW;
-                    if (restY <= win.edgeSlack)
-                        restY = 0;
-                    else if (restY >= sh - win.boxH - win.edgeSlack)
-                        restY = sh - win.boxH;
-
-                    win.posX = restX;
-                    win.posY = restY;
-                    cfg.x = Math.round(restX);
-                    cfg.y = Math.round(restY);
+                    // Stays exactly where it was let go. No snapping.
+                    cfg.x = Math.round(win.posX);
+                    cfg.y = Math.round(win.posY);
                     configFile.writeAdapter();
-                    // Parking it against an edge is what hides it.
-                    win.expanded = !win.docked;
                 }
             }
 
@@ -806,9 +834,9 @@ ShellRoot {
                 // shell that shows the tape inside.
                 property real shellOpacity: 1
 
-                // Width of the magnetic zone along each screen edge, as a
-                // fraction of the disc. 0 disables it.
-                property real edgeMagnet: 0.05
+                // Edge it's docked to and hidden against: "", "left",
+                // "right", "top" or "bottom". Set by right clicking it.
+                property string dock: ""
 
                 // MPRIS bus name; see MprisSource.qml's `prefer` for what
                 // this actually does.

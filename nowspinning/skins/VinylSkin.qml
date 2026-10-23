@@ -48,6 +48,9 @@
 //                                         itself (the cassette's tape)
 //   property color accent                 a color picked out of the cover art,
 //                                         or white when there isn't one
+//   readonly property bool solidBox       the whole box is the object, not just
+//                                         the face: it's grabbed and hidden as
+//                                         a rectangle (the vinyl's turntable)
 //
 // The skin draws itself centered on itself and only animates based on
 // `playing`. The window, dragging, hover, and the controls overlay are none
@@ -114,6 +117,7 @@ Item {
 
     readonly property rect faceRect: Qt.rect(discX - size / 2, discY - size / 2, size, size)
     readonly property bool faceIsCircle: true
+    readonly property bool solidBox: showDeck
 
     implicitWidth: Math.round(boxW)
     implicitHeight: Math.round(boxH)
