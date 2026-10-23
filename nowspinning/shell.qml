@@ -1,4 +1,5 @@
 //@ pragma UseQApplication
+//@ pragma Env QT_LOGGING_RULES=quickshell.io.socket.warning=false
 // MPRIS player widget for Hyprland.
 //
 // This layer is only the window: where it sits, how it's dragged, when it
@@ -811,10 +812,68 @@ ShellRoot {
         // put the effective gain somewhere between 0.45 and runaway,
         // depending on the mouse's polling rate and how busy the compositor
         // was, which is what made the drag feel unpredictable.
+        //
+        // On Hyprland none of that is needed: its request socket says where
+        // the cursor really is on screen, and the widget goes straight to
+        // that minus the point it was grabbed by. No feedback, so nothing to
+        // overshoot and bounce back, and it tracks 1:1 like any floating
+        // window. Asked once per frame; a reply takes a few hundredths of a
+        // millisecond. Elsewhere the env vars are unset and the damped
+        // correction below is what runs.
+        readonly property string hyprSocket: {
+            const sig = Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE");
+            const run = Quickshell.env("XDG_RUNTIME_DIR");
+            return sig && run ? run + "/hypr/" + sig + "/.socket.sock" : "";
+        }
+
+        Socket {
+            id: cursorSocket
+            path: win.hyprSocket
+            property string reply: ""
+
+            // Hyprland answers once and hangs up, so every request is a
+            // fresh connection.
+            onConnectionStateChanged: {
+                if (connected) {
+                    reply = "";
+                    write("j/cursorpos");
+                    flush();
+                }
+            }
+
+            parser: SplitParser {
+                splitMarker: ""
+                onRead: (data) => {
+                    cursorSocket.reply += data;
+                    const m = cursorSocket.reply.match(/"x":\s*(-?\d+)[\s\S]*"y":\s*(-?\d+)/);
+                    if (!m)
+                        return;
+                    // Hyprland hangs up after every reply, which Quickshell
+                    // logs as a socket error: sixty a second while dragging.
+                    // Hanging up first catches some; the logging rule in
+                    // the pragma at the top silences the rest.
+                    cursorSocket.connected = false;
+                    if (!dragger.active || !win.screen)
+                        return;
+                    const sw = win.screen.width;
+                    const sh = win.screen.height;
+                    win.posX = Math.max(0, Math.min(sw - win.boxW,
+                        Number(m[1]) - win.screen.x - dragger.grab.x));
+                    win.posY = Math.max(0, Math.min(sh - win.boxH,
+                        Number(m[2]) - win.screen.y - dragger.grab.y));
+                }
+            }
+        }
+
         FrameAnimation {
             id: stepper
             running: dragger.active
             onTriggered: {
+                if (win.hyprSocket !== "") {
+                    if (!cursorSocket.connected)
+                        cursorSocket.connected = true;
+                    return;
+                }
                 const sw = win.screen ? win.screen.width : 1920;
                 const sh = win.screen ? win.screen.height : 1080;
                 const gain = cfg.dragGain;

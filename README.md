@@ -72,7 +72,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `artFull` | `false` | Full-face cover art, on skins that support it |
 | `progressStyle` | `"ring"` | `"ring"` around the disc, or `"bar"` inside the controls overlay (forced on square-faced skins) |
 | `discOpacity` | `1.0` | Disc transparency, 0 to 1 |
-| `dragGain` | `0.45` | How tightly dragging tracks the cursor; see Limitations |
+| `dragGain` | `0.45` | How tightly dragging tracks the cursor where Hyprland's IPC isn't available; see Limitations |
 | `shellOpacity` | `1` | Cassette skin only: how solid its plastic is. Lower it for a clear shell (around `0.45`): the desktop shows through, and so does the tape inside, running around the rollers. The label stays solid; `discOpacity` fades the whole widget instead |
 | `tintFromArt` | `true` | Color the progress indicator, the volume bar, and the cassette's plastic with a color picked out of the cover art. Covers without much color in them stay white |
 | `dock` | `""` | Edge the widget is docked to and hidden against: `"left"`, `"right"`, `"top"`, `"bottom"`, or `""` for none. Set by right clicking it; see Usage. Replaces `edgeMagnet`, which is no longer read |
@@ -107,13 +107,13 @@ qs kill -c nowspinning
 
 Works with any MPRIS-compliant player exposed on the session D-Bus. Developed and tested against Spotify. `playerctld` is filtered out specifically, since it's a proxy for other players and would show up as a duplicate entry.
 
-Developed and tested only on Hyprland, on Arch. Nothing in the code calls Hyprland specifically, though: the widget is placed with `Quickshell.Wayland`, against the `wlr-layer-shell` protocol, which any wlroots-based compositor implements (Sway, river, and others). It should run there the same way, down to the `monitor` config value, which is just a connector name like `hyprctl monitors` reports, the same kind of name `swaymsg -t get_outputs` reports on Sway. Wayland only, not X11: there's no fallback for compositors or sessions without a layer-shell implementation, GNOME's among them.
+Developed and tested only on Hyprland, on Arch. Only one thing calls Hyprland specifically, and it's optional: while dragging, its request socket says where the cursor is, so the widget tracks it 1:1 (see Limitations). Everything else is placed with `Quickshell.Wayland`, against the `wlr-layer-shell` protocol, which any wlroots-based compositor implements (Sway, river, and others). It should run there the same way, down to the `monitor` config value, which is just a connector name like `hyprctl monitors` reports, the same kind of name `swaymsg -t get_outputs` reports on Sway. Wayland only, not X11: there's no fallback for compositors or sessions without a layer-shell implementation, GNOME's among them.
 
 ## Limitations
 
 - Single player at a time: `preferredPlayer` wins if it's running, otherwise whichever MPRIS player is currently playing.
 - No queue, library, or playlist view; MPRIS doesn't expose those.
 - Playback position is interpolated between polls, not read continuously, so it can drift by a fraction of a second before the next correction.
-- Drag tracking uses a damping factor (`dragGain`) rather than 1:1 cursor following, because the exact 1:1 approach (a screen-sized window) crashes the GPU driver intermittently on this stack. The damped version is stable but not pixel-perfect during the drag itself.
+- A layer-shell surface can't be moved by the compositor the way a floating window is, and a pointer event only says where the cursor is relative to the widget, not on screen. On Hyprland the widget asks its IPC socket for the real cursor position every frame and follows it 1:1. Elsewhere it falls back to a damped correction (`dragGain`), which is stable but lags, and can overshoot and bounce back on fast moves. (A screen-sized window would give 1:1 tracking anywhere, but it crashes the GPU driver intermittently on this stack.)
 - A monitor's orientation is read when the widget starts. Rotating one while it's running isn't picked up: neither Quickshell nor Qt updates the screen size it reported at startup, and catching it would mean listening to Hyprland's IPC, which would tie this to Hyprland specifically. Restart it (`nowspinning` twice) after rotating a monitor. Starting on a rotated output, or moving to one via `monitor`, works fine: the widget gets the rotated dimensions and places itself against them.
 - CPU use is near 0% while paused, and roughly 4 to 10% of one core while spinning, depending on skin and progress style.
