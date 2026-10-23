@@ -78,6 +78,12 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `dock` | `""` | Edge the widget is docked to and hidden against: `"left"`, `"right"`, `"top"`, `"bottom"`, or `""` for none. Set by right clicking it; see Usage. Replaces `edgeMagnet`, which is no longer read |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
 | `peekSide` | `"right"` | CD skin only: which edge of the case the disc pokes out from. `"right"`, `"left"`, `"top"`, or `"bottom"`. Independent of `anchor`; combine freely |
+| `pixels` | `64` | Pixel skin only: squares a side, `64`, `32`, `24` or `16`. Fewer is blockier |
+| `columns` | `32` | ASCII skin only: characters across, `32`, `48` or `64` |
+| `colored` | `true` | ASCII skin only: each character in the cover's colour; `false` draws them all white |
+| `showBezel` | `true` | CRT skin only: the dark plastic frame around the screen |
+| `effect` | `"random"` | CRT skin only: its glitch, `"slices"`, `"roll"`, `"static"`, `"split"`, `"channel"`, or `"random"` for a different one each time |
+| `showStack` | `true` | Polaroid skin only: the last track's photo left underneath the new one |
 | `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
 | `preferredPlayer` | `"org.mpris.MediaPlayer2.spotify"` | MPRIS bus name that wins when more than one player is running, even while paused. Empty string means no preference, so whichever player is actually playing wins instead |
 | `x`, `y` | `-1` | Saved position; `-1` means "use `anchor`". Overwritten automatically when dragged |
@@ -89,7 +95,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 - **Double click the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time. Double click again to flip it back. A single click does nothing there, so it can't flip by accident.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
-- **Hover** to reveal transport controls (previous / play-pause / next), and a gear below them. The gear opens a settings page in the same spot: pick the skin and the size straight from the list, and switch the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the tint from the cover art). Changes save to `config.json` at once, and the widget grows or shrinks around its center.
+- **Hover** to reveal transport controls (previous / play-pause / next), and a gear below them. The gear opens a settings card beside the widget (on whichever side has room): pick the skin from live previews of each, the size, and the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the flat skins' own, the tint from the cover art). It stays open until the gear or its ✕ close it. Changes save to `config.json` at once, and the widget grows or shrinks around its center.
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 

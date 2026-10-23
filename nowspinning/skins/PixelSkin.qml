@@ -14,7 +14,7 @@ Item {
     property string artUrl: ""
     property bool playing: false
     property bool blankLabel: false
-    property int pixels: 32  // squares a side
+    property int pixels: 64  // squares a side
 
     readonly property bool supportsFullArt: false
     property bool artFull: false

@@ -116,8 +116,23 @@ ShellRoot {
             }
             if (ringUsable)
                 toggles.push({ key: "ring", label: "Ring", on: progressStyle === "ring" });
+            if (skinName === "cd")
+                toggles.push({ key: "peekSide", label: "Side: " + cfg.peekSide[0].toUpperCase() + cfg.peekSide.slice(1), on: false });
             if (skinName === "cassette" || skinName === "walkman")
                 toggles.push({ key: "clear", label: "Clear", on: cfg.shellOpacity < 1 });
+            // The flat skins' options; the stepped ones show their value and step on click.
+            if (skinName === "pixel")
+                toggles.push({ key: "pixels", label: "Px: " + cfg.pixels, on: false });
+            if (skinName === "ascii") {
+                toggles.push({ key: "columns", label: "Cols: " + cfg.columns, on: false });
+                toggles.push({ key: "colored", label: "Color", on: cfg.colored });
+            }
+            if (skinName === "crt") {
+                toggles.push({ key: "showBezel", label: "Bezel", on: cfg.showBezel });
+                toggles.push({ key: "effect", label: "Glitch: " + cfg.effect[0].toUpperCase() + cfg.effect.slice(1), on: false });
+            }
+            if (skinName === "polaroid")
+                toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
 
             return [
@@ -129,6 +144,14 @@ ShellRoot {
             ];
         }
 
+        // Options that step through values instead of switching on and off.
+        readonly property var steps: ({
+            peekSide: ["right", "left", "top", "bottom"],
+            pixels: [64, 32, 24, 16],
+            columns: [32, 48, 64],
+            effect: ["random", "slices", "roll", "static", "split", "channel"]
+        })
+
         function pickOption(section, key) {
             keepingCenter(() => {
                 if (section === "skin")
@@ -139,7 +162,10 @@ ShellRoot {
                     cfg.progressStyle = cfg.progressStyle === "ring" ? "bar" : "ring";
                 else if (key === "clear")
                     cfg.shellOpacity = cfg.shellOpacity < 1 ? 1 : 0.45;
-                else
+                else if (steps[key]) {
+                    const values = steps[key];
+                    cfg[key] = values[(values.indexOf(cfg[key]) + 1) % values.length];
+                } else
                     cfg[key] = !cfg[key];
             });
         }
@@ -153,6 +179,16 @@ ShellRoot {
         }
 
         readonly property string skinName: cfg.skin
+
+        // The flat skins' options, each bound to its config key of the same
+        // name when the skin has it.
+        readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack"]
+        function bindFlatOptions(item) {
+            for (const key of flatOptions) {
+                if (item[key] !== undefined)
+                    item[key] = Qt.binding(() => cfg[key]);
+            }
+        }
         readonly property bool showArm: cfg.showArm
         readonly property bool showDeck: cfg.showDeck
 
@@ -251,9 +287,7 @@ ShellRoot {
         // and stays on screen when the widget hides against an edge.
         readonly property bool solidBox:
             skinLoader.item ? skinLoader.item.solidBox === true : false
-        // The settings page squares the overlay off, so its corners need to
-        // take clicks too.
-        readonly property bool roundHit: faceIsCircle && !solidBox && !controls.settingsOpen
+        readonly property bool roundHit: faceIsCircle && !solidBox
         readonly property rect body: solidBox ? Qt.rect(0, 0, boxW, boxH) : face
 
         // How much of the disc still peeks out once it's docked to an edge.
@@ -590,6 +624,7 @@ ShellRoot {
                                     item.player = source;
                                 if (item.title !== undefined)
                                     item.title = Qt.binding(() => source.title);
+                                win.bindFlatOptions(item);
 
                                 // A skin that starts closed needs a bump to
                                 // open. If the skin was switched to live
@@ -647,6 +682,9 @@ ShellRoot {
                                     item.accent = Qt.binding(() => accent.accent);
                                 if (item.shellOpacity !== undefined)
                                     item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
+                                // The back keeps the front's frame (the CRT's bezel).
+                                if (item.showBezel !== undefined)
+                                    item.showBezel = Qt.binding(() => cfg.showBezel);
                             }
                         }
 
@@ -720,8 +758,6 @@ ShellRoot {
 
                 Controls {
                     id: controls
-                    options: win.settingsOptions
-                    onOptionPicked: (section, key) => win.pickOption(section, key)
                     accent: accent.accent
                     accentAlpha: win.accentStroke.a
                     hint: win.ringPreview >= 0
@@ -738,6 +774,26 @@ ShellRoot {
                     showProgress: !win.ringStyle
                 }
             }
+        }
+
+        SettingsCard {
+            id: settingsCard
+            host: win
+            face: Qt.rect(stage.x + win.face.x, stage.y + win.face.y, win.face.width, win.face.height)
+            open: controls.settingsOpen
+            options: win.settingsOptions
+            skins: win.skins
+            artUrl: source.artUrl
+            playing: source.playing
+            title: source.title
+            accent: accent.accent
+            onPicked: (section, key) => win.pickOption(section, key)
+            onCloseRequested: controls.settingsOpen = false
+        }
+        // Docking the widget away closes it; otherwise only the gear or its ✕ do.
+        Connections {
+            target: win
+            function onCollapsedChanged() { if (win.collapsed) controls.settingsOpen = false; }
         }
 
         Component { id: vinylSkin; VinylSkin {} }
@@ -1000,6 +1056,18 @@ ShellRoot {
                 // Cassette only: how solid its plastic is. Lower for a clear
                 // shell that shows the tape inside.
                 property real shellOpacity: 1
+
+                // The flat skins. Pixel: squares a side (64, 32, 24, 16).
+                // ASCII: columns (32, 48, 64), in the cover's colours or
+                // white. CRT: its bezel, and the glitch ("random", "slices",
+                // "roll", "static", "split", "channel"). Polaroid: the last
+                // track's photo left underneath.
+                property int pixels: 64
+                property int columns: 32
+                property bool colored: true
+                property bool showBezel: true
+                property string effect: "random"
+                property bool showStack: true
 
                 // Edge it's docked to and hidden against: "", "left",
                 // "right", "top" or "bottom". Set by right clicking it.

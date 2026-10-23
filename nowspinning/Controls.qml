@@ -22,15 +22,9 @@ Item {
 
     property bool showTransport: true
 
-    // The settings page, behind the gear: sections of chips, each
-    // `{ id, icon, items: [{ key, label, on }] }`, built by the window,
-    // which also applies whatever gets picked.
-    property var options: []
-    signal optionPicked(string section, string key)
-
-    // Starts closed every time the overlay comes back.
+    // Whether the settings card (SettingsCard.qml, beside the widget) is
+    // open; the gear switches it, the window closes it.
     property bool settingsOpen: false
-    onShownChanged: if (!shown) settingsOpen = false
 
     // Replaces the artist line while set: the time a click would jump to,
     // while the pointer is over the ring outside this overlay.
@@ -74,13 +68,10 @@ Item {
         onTriggered: root.volumeVisible = false
     }
 
-    // Round over a round face, except while the settings page is open:
-    // then it squares off so the rows of chips get the corners too.
     Rectangle {
         anchors.fill: parent
-        radius: root.circular && !root.settingsOpen ? width / 2 : root.cornerRadius
-        Behavior on radius { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        color: Qt.rgba(0, 0, 0, root.settingsOpen ? 0.82 : 0.72)
+        radius: root.circular ? width / 2 : root.cornerRadius
+        color: Qt.rgba(0, 0, 0, 0.72)
         antialiasing: true
     }
 
@@ -88,10 +79,6 @@ Item {
         anchors.centerIn: parent
         width: parent.width * 0.74
         spacing: Math.round(root.size * 0.018)
-        opacity: root.settingsOpen ? 0 : 1
-        visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 140 } }
-
         Text {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
@@ -211,84 +198,16 @@ Item {
         }
     }
 
-    // Settings page: one row of chips per section, an icon at its head.
-    // Picked straight from the list instead of stepping through options,
-    // and only the options that mean something for the current skin.
-    Column {
-        id: page
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: -gear.height / 2
-        width: parent.width * 0.86
-        spacing: Math.round(root.size * 0.022)
-        opacity: root.settingsOpen ? 1 : 0
-        visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: 140 } }
-
-        Repeater {
-            model: root.options
-
-            Flow {
-                id: section
-                required property var modelData
-                width: page.width
-                spacing: Math.round(root.size * 0.018)
-
-                IconButton {
-                    width: Math.round(root.size * 0.09); height: width
-                    kind: section.modelData.icon
-                    tint: Qt.rgba(1, 1, 1, 0.55)
-                    enabled: false
-                }
-
-                Repeater {
-                    model: section.modelData.items
-
-                    Item {
-                        id: chip
-                        required property var modelData
-                        width: chipText.implicitWidth + Math.round(root.size * 0.05)
-                        height: Math.round(root.size * 0.09)
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: height / 2
-                            color: chip.modelData.on
-                                ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.85)
-                                : Qt.rgba(1, 1, 1, chipHover.hovered ? 0.18 : 0.09)
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                        }
-
-                        Text {
-                            id: chipText
-                            anchors.centerIn: parent
-                            text: chip.modelData.label
-                            color: chip.modelData.on ? "#101215" : Qt.rgba(1, 1, 1, 0.8)
-                            font.pixelSize: Math.max(7, Math.round(root.size * 0.046))
-                            font.weight: Font.DemiBold
-                        }
-
-                        HoverHandler { id: chipHover; cursorShape: Qt.PointingHandCursor }
-                        TapHandler {
-                            onTapped: root.optionPicked(section.modelData.id, chip.modelData.key)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Whether a point lands on the gear or, while it's open, anywhere on
-    // the settings page, so the window's own tap (which flips the widget)
-    // leaves it alone. `x`/`y` are in `from`'s coordinates.
+    // Whether a point lands on the gear, so the window's own tap (which
+    // flips the widget) leaves it alone. `x`/`y` are in `from`'s coordinates.
     function onSettings(from, x, y) {
         if (!shown)
             return false;
-        const target = settingsOpen ? root : gear;
-        const p = target.mapFromItem(from, x, y);
-        return p.x >= 0 && p.y >= 0 && p.x <= target.width && p.y <= target.height;
+        const p = gear.mapFromItem(from, x, y);
+        return p.x >= 0 && p.y >= 0 && p.x <= gear.width && p.y <= gear.height;
     }
 
-    // Gear, near the bottom edge: opens the settings page, and closes it.
+    // Gear, near the bottom edge: opens the settings card, and closes it.
     Item {
         id: gear
         anchors.horizontalCenter: parent.horizontalCenter
