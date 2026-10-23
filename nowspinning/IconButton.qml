@@ -5,7 +5,7 @@ import QtQuick
 Item {
     id: btn
 
-    property string kind: "play"   // prev | play | pause | next
+    property string kind: "play"   // prev | play | pause | next | size
     property bool active: true
     property color tint: "white"
     signal activated()
@@ -47,6 +47,22 @@ Item {
                 drawTriangle(cx - s * 0.40, true);
                 drawTriangle(cx + s * 0.40, true);
                 ctx.fillRect(cx + s * 0.78, cy - s, s * 0.22, s * 2);
+            } else if (btn.kind === "size") {
+                // Two arrows pulling apart along the diagonal.
+                const a = s * 0.95, head = s * 0.55;
+                ctx.lineWidth = Math.max(1.2, width * 0.075);
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.beginPath();
+                ctx.moveTo(cx - a, cy + a);
+                ctx.lineTo(cx + a, cy - a);
+                ctx.moveTo(cx + a - head, cy - a);
+                ctx.lineTo(cx + a, cy - a);
+                ctx.lineTo(cx + a, cy - a + head);
+                ctx.moveTo(cx - a + head, cy + a);
+                ctx.lineTo(cx - a, cy + a);
+                ctx.lineTo(cx - a, cy + a - head);
+                ctx.stroke();
             } else if (btn.kind === "prev") {
                 drawTriangle(cx + s * 0.40, false);
                 drawTriangle(cx - s * 0.40, false);

@@ -20,6 +20,10 @@ Item {
     property color accent: "white"
     property real accentAlpha: 0.55
 
+    // Current size, shown on the size button ("S", "M", "L", "XL").
+    property string sizeLabel: ""
+    signal resizeRequested()
+
     // Replaces the artist line while set: the time a click would jump to,
     // while the pointer is over the ring outside this overlay.
     property string hint: ""
@@ -188,5 +192,48 @@ Item {
                 }
             }
         }
+    }
+
+    // Size, apart from the transport row, near the bottom edge: it's a
+    // setting, not playback, and four buttons in that row don't fit the
+    // small preset's circle.
+    Item {
+        id: sizeButton
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Math.round(root.size * (root.circular ? 0.07 : 0.05))
+        width: sizeRow.width + Math.round(root.size * 0.06)
+        height: Math.round(root.size * 0.11)
+
+        Rectangle {
+            anchors.fill: parent
+            radius: height / 2
+            color: Qt.rgba(1, 1, 1, sizeHover.hovered ? 0.16 : 0.08)
+            Behavior on color { ColorAnimation { duration: 120 } }
+        }
+
+        Row {
+            id: sizeRow
+            anchors.centerIn: parent
+            spacing: Math.round(root.size * 0.012)
+
+            IconButton {
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.round(root.size * 0.08); height: width
+                kind: "size"
+                enabled: false   // the whole pill takes the click
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.sizeLabel
+                color: Qt.rgba(1, 1, 1, 0.8)
+                font.pixelSize: Math.max(7, Math.round(root.size * 0.05))
+                font.weight: Font.DemiBold
+            }
+        }
+
+        HoverHandler { id: sizeHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: root.resizeRequested() }
     }
 }

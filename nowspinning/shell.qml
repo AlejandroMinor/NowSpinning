@@ -71,6 +71,44 @@ ShellRoot {
             xl: 280
         })
 
+        readonly property var sizeOrder: ["small", "medium", "large", "xl"]
+
+        // What the size button shows: the preset's initial, or the exact
+        // number when the config holds one.
+        readonly property string sizeLabel: {
+            const i = sizeOrder.indexOf(String(cfg.discSize).trim());
+            return i >= 0 ? ["S", "M", "L", "XL"][i] : String(discSize);
+        }
+
+        // On the next preset up, wrapping around after the largest. Grows
+        // and shrinks around its center instead of its top-left corner, so
+        // it stays under the pointer that just clicked it.
+        property bool resizing: false
+        function cycleSize() {
+            const raw = String(cfg.discSize).trim();
+            let i = sizeOrder.indexOf(raw);
+            if (i < 0) {
+                // An exact number: on to the first preset bigger than it.
+                i = sizeOrder.findIndex(n => sizePresets[n] > discSize) - 1;
+                if (i < -1)
+                    i = -1;
+            }
+            const cx = placedX + boxW / 2;
+            const cy = placedY + boxH / 2;
+
+            resizing = true;
+            cfg.discSize = sizeOrder[(i + 1) % sizeOrder.length];
+
+            const sw = screen ? screen.width : 1920;
+            const sh = screen ? screen.height : 1080;
+            posX = Math.max(0, Math.min(sw - boxW, cx - boxW / 2));
+            posY = Math.max(0, Math.min(sh - boxH, cy - boxH / 2));
+            cfg.x = Math.round(posX);
+            cfg.y = Math.round(posY);
+            configFile.writeAdapter();
+            Qt.callLater(() => resizing = false);
+        }
+
         readonly property int discSize: {
             const raw = String(cfg.discSize).trim();
             const asNumber = Number(raw);
@@ -312,11 +350,11 @@ ShellRoot {
         // the position is already being driven a frame at a time, and
         // easing it there would just add lag on top of the compositor's own.
         Behavior on placedX {
-            enabled: !dragger.active
+            enabled: !dragger.active && !win.resizing
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
         Behavior on placedY {
-            enabled: !dragger.active
+            enabled: !dragger.active && !win.resizing
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
 
@@ -635,6 +673,8 @@ ShellRoot {
 
                 Controls {
                     id: controls
+                    sizeLabel: win.sizeLabel
+                    onResizeRequested: win.cycleSize()
                     accent: accent.accent
                     accentAlpha: win.accentStroke.a
                     hint: win.ringPreview >= 0
