@@ -1178,7 +1178,10 @@ ShellRoot {
         // Config. One single file for both settings and the widget's last
         // position: dragging it rewrites the same file.
         // ---------------------------------------------------------------
-        readonly property string configDir: Quickshell.env("HOME") + "/.config/nowspinning"
+        // NOWSPINNING_CONFIG_DIR points another launcher at its own config
+        // (HyprFlow's pop-out keeps the bar's look apart from this one).
+        readonly property string configDir: Quickshell.env("NOWSPINNING_CONFIG_DIR")
+            || Quickshell.env("HOME") + "/.config/nowspinning"
 
         // FileView doesn't create the directory on its own, and without it
         // the very first write silently fails.

@@ -62,7 +62,7 @@ Optionally, bind a key to `nowspinning` in your Hyprland keybindings for a manua
 
 ## Config
 
-Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config.example.json` for the full set of defaults.
+Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config.example.json` for the full set of defaults. Set `NOWSPINNING_CONFIG_DIR` to read it from another folder instead, for a second launcher with its own look.
 
 | Key | Default | Meaning |
 |---|---|---|
