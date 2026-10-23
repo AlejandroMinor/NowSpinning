@@ -2,6 +2,8 @@
 
 A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card), with transport controls on hover.
 
+![Every skin, playing the same track](docs/skins.webp)
+
 It's a player *client* only: it displays and controls whatever MPRIS player is already running. It doesn't play audio, manage a library, or handle a queue.
 
 ## Why
