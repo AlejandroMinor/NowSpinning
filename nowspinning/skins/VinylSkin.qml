@@ -42,6 +42,11 @@
 //   property int trackChangeToken         bumped by the window on every real
 //                                         track change, for a skin that wants
 //                                         to react (e.g. the CD's swap-in)
+//   property real progress                0..1 of the current track, for a
+//                                         skin that shows it on the object
+//                                         itself (the cassette's tape)
+//   property color accent                 a color picked out of the cover art,
+//                                         or white when there isn't one
 //
 // The skin draws itself centered on itself and only animates based on
 // `playing`. The window, dragging, hover, and the controls overlay are none

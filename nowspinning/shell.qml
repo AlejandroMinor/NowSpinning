@@ -121,7 +121,8 @@ ShellRoot {
         readonly property var skins: ({
             "vinyl": vinylSkin,
             "cd": cdSkin,
-            "disc": discSkin
+            "disc": discSkin,
+            "cassette": cassetteSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -453,8 +454,12 @@ ShellRoot {
                                     item.revealed = Qt.binding(() => win.flipped);
                                 if (item.peekSide !== undefined)
                                     item.peekSide = Qt.binding(() => cfg.peekSide);
+                                if (item.progress !== undefined)
+                                    item.progress = Qt.binding(() => source.progress);
                                 if (item.accent !== undefined)
                                     item.accent = Qt.binding(() => accent.accent);
+                                if (item.shellOpacity !== undefined)
+                                    item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
 
                                 // A skin that starts closed needs a bump to
                                 // open. If the skin was switched to live
@@ -500,8 +505,14 @@ ShellRoot {
                                     item.showArm = false;
                                 if (item.blankLabel !== undefined)
                                     item.blankLabel = true;
+                                // Same tape split as the front, so the
+                                // reels don't jump when it flips back.
+                                if (item.progress !== undefined)
+                                    item.progress = Qt.binding(() => source.progress);
                                 if (item.accent !== undefined)
                                     item.accent = Qt.binding(() => accent.accent);
+                                if (item.shellOpacity !== undefined)
+                                    item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
                             }
                         }
 
@@ -590,6 +601,7 @@ ShellRoot {
         Component { id: vinylSkin; VinylSkin {} }
         Component { id: cdSkin; CdSkin {} }
         Component { id: discSkin; DiscSkin {} }
+        Component { id: cassetteSkin; CassetteSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -773,6 +785,10 @@ ShellRoot {
                 // Tint the progress indicator (and a skin's accents, if it
                 // has any) with a color picked out of the cover art.
                 property bool tintFromArt: true
+
+                // Cassette only: how solid its plastic is. Lower for a clear
+                // shell that shows the tape inside.
+                property real shellOpacity: 1
 
                 // Width of the magnetic zone along each screen edge, as a
                 // fraction of the disc. 0 disables it.
