@@ -76,6 +76,9 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `shellOpacity` | `1` | Cassette and walkman skins only: how solid its plastic is. Lower it for a clear shell (around `0.45`): the desktop shows through, and so does the tape inside, running around the rollers. The label stays solid; `discOpacity` fades the whole widget instead |
 | `tintFromArt` | `true` | Color the progress indicator, the volume bar, and the cassette's and MiniDisc's plastic with a color picked out of the cover art. Covers without much color in them stay white |
 | `shadow` | `true` | A soft drop shadow under the widget, as if it sat a little above the desktop. Skins with a shadow of their own (the turntable, the foil card, the Polaroid) and the hologram leave it out |
+| `lyrics` | `true` | Synced lyrics under the widget (above it when there's no room below), from [LRCLIB](https://lrclib.net). Only tracks with timed lyrics show any. Clicks go straight through them |
+| `lyricsLines` | `3` | `3` shows the lines before and after the current one, faded; `1` only the current one |
+| `lyricsSize` | `"medium"` | How big the lyrics are, `"small"`, `"medium"` or `"large"`, on top of following the widget's own size |
 | `dock` | `""` | Edge the widget is docked to and hidden against: `"left"`, `"right"`, `"top"`, `"bottom"`, or `""` for none. Set by right clicking it; see Usage. Replaces `edgeMagnet`, which is no longer read |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
 | `peekSide` | `"right"` | CD skin only: which edge of the case the disc pokes out from. `"right"`, `"left"`, `"top"`, or `"bottom"`. Independent of `anchor`; combine freely |

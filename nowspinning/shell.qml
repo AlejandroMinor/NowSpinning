@@ -156,6 +156,11 @@ ShellRoot {
             }
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
             toggles.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
+            toggles.push({ key: "lyrics", label: "Lyrics", on: cfg.lyrics });
+            if (cfg.lyrics) {
+                toggles.push({ key: "lyricsLines", label: "Lines: " + cfg.lyricsLines, on: false });
+                toggles.push({ key: "lyricsSize", label: "Text: " + cap(cfg.lyricsSize, "medium")[0], on: false });
+            }
 
             return [
                 { id: "skin", icon: "skin",
@@ -174,6 +179,8 @@ ShellRoot {
             effect: ["random", "slices", "roll", "static", "split", "channel"],
             holoColor: ["cyan", "green", "pink", "amber", "art"],
             holoOpacity: [1, 0.75, 0.5],
+            lyricsLines: [3, 1],
+            lyricsSize: ["medium", "large", "small"],
             foilStyle: ["rainbow", "gold", "silver", "art"]
         })
 
@@ -528,6 +535,19 @@ ShellRoot {
         // Data
         // ---------------------------------------------------------------
         MprisSource { id: source; prefer: cfg.preferredPlayer }
+
+        Lyrics { id: lyrics; player: source; enabled: cfg.lyrics }
+
+        LyricsWindow {
+            screen: win.screen
+            lyrics: lyrics
+            widget: Qt.rect(win.placedX + win.body.x, win.placedY + win.body.y,
+                            win.body.width, win.body.height)
+            lines: cfg.lyricsLines
+            scale: Math.max(0.8, win.discSize / 170)
+                * ({ small: 0.8, medium: 1, large: 1.3 }[cfg.lyricsSize] ?? 1)
+            shown: cfg.lyrics && !win.collapsed && source.available
+        }
 
         ArtAccent {
             id: accent
@@ -1176,6 +1196,14 @@ ShellRoot {
 
                 // A soft drop shadow under the skin.
                 property bool shadow: true
+
+                // Synced lyrics from lrclib.net under the widget, with the
+                // lines around the current one (3) or on its own (1).
+                property bool lyrics: true
+                property int lyricsLines: 3
+                // Text size on top of the widget's own: "small", "medium",
+                // "large".
+                property string lyricsSize: "medium"
 
                 // Cassette only: how solid its plastic is. Lower for a clear
                 // shell that shows the tape inside.
