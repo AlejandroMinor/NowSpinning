@@ -48,6 +48,13 @@
 //                                         itself (the cassette's tape)
 //   property color accent                 a color picked out of the cover art,
 //                                         or white when there isn't one
+//   property var player                   the MprisSource, for a skin with
+//                                         working controls of its own
+//   readonly property bool ownTransport   it has its own transport keys, so the
+//                                         overlay leaves its buttons out
+//   function ownsPoint(x, y)              whether a tap there (skin coordinates)
+//                                         is one of its own keys, which then
+//                                         doesn't also flip the widget
 //   readonly property bool solidBox       the whole box is the object, not just
 //                                         the face: it's grabbed and hidden as
 //                                         a rectangle (the vinyl's turntable)

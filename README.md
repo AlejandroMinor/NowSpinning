@@ -1,6 +1,6 @@
 # NowSpinning
 
-A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, or a MiniDisc, with transport controls on hover.
+A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, or a portable cassette player, with transport controls on hover.
 
 It's a player *client* only: it displays and controls whatever MPRIS player is already running. It doesn't play audio, manage a library, or handle a queue.
 
@@ -64,16 +64,16 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 | Key | Default | Meaning |
 |---|---|---|
-| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), or `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside) |
+| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside), or `"walkman"` (the cassette inside a portable player, its play key pressed in while playing) |
 | `discSize` | `"medium"` | `"small"` (120px), `"medium"` (170), `"large"` (220), or `"xl"` (280); an exact pixel size also works as a string, e.g. `"200"`. Everything else scales from this |
 | `showArm` | `false` | Tonearm on the vinyl skin; the other skins ignore it |
 | `showDeck` | `false` | Vinyl skin only: the turntable under the record, with platter, speed keys and cue lever. Makes the widget wider; pairs well with `showArm` |
-| `spinDegreesPerSecond` | `9` | Rotation speed; `0` lets the skin pick its own (vinyl: 9, CD: 30, cassette: 40, for a reel holding half the tape; MiniDisc: 30) |
+| `spinDegreesPerSecond` | `9` | Rotation speed; `0` lets the skin pick its own (vinyl: 9, CD: 30, cassette and walkman: 40, for a reel holding half the tape; MiniDisc: 30) |
 | `artFull` | `false` | Full-face cover art, on skins that support it |
 | `progressStyle` | `"ring"` | `"ring"` around the disc, or `"bar"` inside the controls overlay (forced on square-faced skins) |
 | `discOpacity` | `1.0` | Disc transparency, 0 to 1 |
 | `dragGain` | `0.45` | How tightly dragging tracks the cursor where Hyprland's IPC isn't available; see Limitations |
-| `shellOpacity` | `1` | Cassette skin only: how solid its plastic is. Lower it for a clear shell (around `0.45`): the desktop shows through, and so does the tape inside, running around the rollers. The label stays solid; `discOpacity` fades the whole widget instead |
+| `shellOpacity` | `1` | Cassette and walkman skins only: how solid its plastic is. Lower it for a clear shell (around `0.45`): the desktop shows through, and so does the tape inside, running around the rollers. The label stays solid; `discOpacity` fades the whole widget instead |
 | `tintFromArt` | `true` | Color the progress indicator, the volume bar, and the cassette's and MiniDisc's plastic with a color picked out of the cover art. Covers without much color in them stay white |
 | `dock` | `""` | Edge the widget is docked to and hidden against: `"left"`, `"right"`, `"top"`, `"bottom"`, or `""` for none. Set by right clicking it; see Usage. Replaces `edgeMagnet`, which is no longer read |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
@@ -89,7 +89,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 - **Tap the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
-- **Hover** to reveal transport controls (previous / play-pause / next), and two buttons below them that step through options on every click and save them: the skin (`vinyl`, `cd`, `disc`, `cassette`, `minidisc`) and the size (`small`, `medium`, `large`, `xl`). Either one grows or shrinks the widget around its center.
+- **Hover** to reveal transport controls (previous / play-pause / next), and two buttons below them that step through options on every click and save them: the skin (`vinyl`, `cd`, `disc`, `cassette`, `minidisc`, `walkman`) and the size (`small`, `medium`, `large`, `xl`). Either one grows or shrinks the widget around its center.
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 

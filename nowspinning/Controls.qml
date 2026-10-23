@@ -24,6 +24,8 @@ Item {
     property string sizeLabel: ""
     signal resizeRequested()
 
+    property bool showTransport: true
+
     // Current skin, shown on the skin button.
     property string skinLabel: ""
     signal skinRequested()
@@ -106,6 +108,9 @@ Item {
         Item { width: 1; height: Math.round(root.size * 0.03) }
 
         Row {
+            // A skin with its own transport keys (the walkman) doesn't
+            // need a second set drawn over it.
+            visible: root.showTransport
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: Math.round(root.size * 0.045)
 

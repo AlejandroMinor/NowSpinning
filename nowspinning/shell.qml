@@ -116,9 +116,10 @@ ShellRoot {
         }
 
         // The skin button steps through these, in this order.
-        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc"]
+        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman"]
         readonly property var skinNames: ({
-            vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD"
+            vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
+            walkman: "Walkman"
         })
         readonly property string skinLabel: skinNames[skinName] ?? skinName
 
@@ -180,7 +181,8 @@ ShellRoot {
             "cd": cdSkin,
             "disc": discSkin,
             "cassette": cassetteSkin,
-            "minidisc": minidiscSkin
+            "minidisc": minidiscSkin,
+            "walkman": walkmanSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -562,6 +564,8 @@ ShellRoot {
                                     item.accent = Qt.binding(() => accent.accent);
                                 if (item.shellOpacity !== undefined)
                                     item.shellOpacity = Qt.binding(() => cfg.shellOpacity);
+                                if (item.player !== undefined)
+                                    item.player = source;
 
                                 // A skin that starts closed needs a bump to
                                 // open. If the skin was switched to live
@@ -706,6 +710,7 @@ ShellRoot {
                     height: win.face.height
                     size: Math.min(win.face.width, win.face.height)
                     circular: win.faceIsCircle
+                    showTransport: !(skinLoader.item && skinLoader.item.ownTransport === true)
                     source: source
                     shown: hover.hovered && !win.collapsed && !win.flipped
                     showProgress: !win.ringStyle
@@ -718,6 +723,7 @@ ShellRoot {
         Component { id: discSkin; DiscSkin {} }
         Component { id: cassetteSkin; CassetteSkin {} }
         Component { id: minidiscSkin; MiniDiscSkin {} }
+        Component { id: walkmanSkin; WalkmanSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -764,6 +770,14 @@ ShellRoot {
                 if (onRing >= 0 || onBar >= 0) {
                     source.seekTo(onRing >= 0 ? onRing : onBar);
                     return;
+                }
+
+                // A skin's own keys (the walkman's) take their own taps.
+                const skin = skinLoader.item;
+                if (skin && skin.ownsPoint && !win.flipped) {
+                    const sp = skin.mapFromItem(null, point.position.x, point.position.y);
+                    if (skin.ownsPoint(sp.x, sp.y))
+                        return;
                 }
 
                 // Outside the buttons' zone, which lives at the face's
