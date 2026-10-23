@@ -273,6 +273,17 @@ ShellRoot {
         // ---------------------------------------------------------------
         MprisSource { id: source; prefer: cfg.preferredPlayer }
 
+        ArtAccent {
+            id: accent
+            source: source.artUrl
+            enabled: cfg.tintFromArt
+        }
+
+        // The progress indicator's color. Plain white reads fine at half
+        // strength; a tint needs more of itself to read as a color at all.
+        readonly property color accentStroke: Qt.rgba(accent.accent.r, accent.accent.g,
+            accent.accent.b, accent.tinted ? 0.85 : 0.55)
+
         // ---------------------------------------------------------------
         // Window
         // ---------------------------------------------------------------
@@ -420,6 +431,8 @@ ShellRoot {
                                     item.revealed = Qt.binding(() => win.flipped);
                                 if (item.peekSide !== undefined)
                                     item.peekSide = Qt.binding(() => cfg.peekSide);
+                                if (item.accent !== undefined)
+                                    item.accent = Qt.binding(() => accent.accent);
 
                                 // A skin that starts closed needs a bump to
                                 // open. If the skin was switched to live
@@ -465,6 +478,8 @@ ShellRoot {
                                     item.showArm = false;
                                 if (item.blankLabel !== undefined)
                                     item.blankLabel = true;
+                                if (item.accent !== undefined)
+                                    item.accent = Qt.binding(() => accent.accent);
                             }
                         }
 
@@ -513,6 +528,7 @@ ShellRoot {
                     progress: source.progress
                     visible: win.ringStyle && source.duration > 0
                     radius: win.discSize * 0.535
+                    color: win.accentStroke
                     waves: 14
 
                     // The wave travels while playing and flattens on pause.
@@ -529,6 +545,8 @@ ShellRoot {
                 }
 
                 Controls {
+                    accent: accent.accent
+                    accentAlpha: win.accentStroke.a
                     x: win.face.x
                     y: win.face.y
                     width: win.face.width
@@ -708,6 +726,10 @@ ShellRoot {
                 property string progressStyle: "ring"
                 property real discOpacity: 1.0
                 property real dragGain: 0.45
+
+                // Tint the progress indicator (and a skin's accents, if it
+                // has any) with a color picked out of the cover art.
+                property bool tintFromArt: true
 
                 // Width of the magnetic zone along each screen edge, as a
                 // fraction of the disc. 0 disables it.

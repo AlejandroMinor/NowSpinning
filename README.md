@@ -72,6 +72,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `progressStyle` | `"ring"` | `"ring"` around the disc, or `"bar"` inside the controls overlay (forced on square-faced skins) |
 | `discOpacity` | `1.0` | Disc transparency, 0 to 1 |
 | `dragGain` | `0.45` | How tightly dragging tracks the cursor; see Limitations |
+| `tintFromArt` | `true` | Color the progress indicator and the volume bar with a color picked out of the cover art. Covers without much color in them stay white |
 | `edgeMagnet` | `0.05` | Width of the magnetic zone along each screen edge, as a fraction of the disc. Dropping the widget inside it docks it to that edge. `0` turns the magnet off, and the widget stays wherever you drop it |
 | `anchor` | `"left"` | Starting *screen* position when no `x`/`y` is saved: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`, `bottom-right` |
 | `peekSide` | `"right"` | CD skin only: which edge of the case the disc pokes out from. `"right"`, `"left"`, `"top"`, or `"bottom"`. Independent of `anchor`; combine freely |

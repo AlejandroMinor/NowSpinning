@@ -16,6 +16,10 @@ Item {
     // Time bar drawn in here, as an alternative to the ring around the disc.
     property bool showProgress: false
 
+    // Color for the time bar and the volume fill; see ArtAccent.qml.
+    property color accent: "white"
+    property real accentAlpha: 0.55
+
     opacity: shown ? 1 : 0
     visible: opacity > 0
     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutQuad } }
@@ -119,7 +123,7 @@ Item {
                 flowing: root.shown && root.source && root.source.playing
                 thickness: Math.max(1.5, root.size * 0.011)
                 headRadius: Math.max(2, root.size * 0.018)
-                color: Qt.rgba(1, 1, 1, 0.55)
+                color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, root.accentAlpha)
             }
 
             // Volume, layered on top, only while it's being adjusted.
@@ -147,7 +151,7 @@ Item {
                     height: parent.height
                     width: parent.width * (root.source ? root.source.volume : 0)
                     radius: height / 2
-                    color: Qt.rgba(1, 1, 1, 0.85)
+                    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.85)
                 }
             }
         }

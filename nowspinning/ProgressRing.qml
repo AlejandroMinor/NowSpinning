@@ -38,6 +38,7 @@ Item {
     onRadiusChanged: cv.requestPaint()
     onLinearChanged: cv.requestPaint()
     onWidthChanged: cv.requestPaint()
+    onColorChanged: cv.requestPaint()
 
     // 30 fps, not 60: the wave completes a cycle every 2.2s, so that's still
     // ~67 frames per cycle. Repainting the canvas at double that rate cost
