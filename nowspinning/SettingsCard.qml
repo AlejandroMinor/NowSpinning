@@ -36,6 +36,15 @@ PopupWindow {
     anchor.adjustment: PopupAdjustment.FlipX | PopupAdjustment.SlideY
 
     visible: open
+
+    // The widget resizes under it (a new skin, a new size, the shadow's
+    // room coming or going): re-anchor once the new geometry has settled,
+    // or the card stays where the old face was.
+    function reanchor() {
+        if (visible)
+            Qt.callLater(() => anchor.updateAnchor());
+    }
+    onFaceChanged: reanchor()
     color: "transparent"
     implicitWidth: columns * tile + (columns - 1) * 6 + 28
     implicitHeight: content.implicitHeight + 28

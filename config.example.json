@@ -20,6 +20,7 @@
     "pixels": 64,
     "preferredPlayer": "org.mpris.MediaPlayer2.spotify",
     "progressStyle": "ring",
+    "shadow": true,
     "shellOpacity": 0.7,
     "showArm": false,
     "showBezel": true,

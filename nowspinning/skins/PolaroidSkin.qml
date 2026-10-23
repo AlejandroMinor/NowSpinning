@@ -43,6 +43,8 @@ Item {
                                              (height - frameHeight) / 2,
                                              frameWidth, frameHeight)
     readonly property bool faceIsCircle: false
+    // The photos draw their own.
+    readonly property bool ownShadow: true
     // The photo underneath sticks out past the face.
     readonly property bool solidBox: true
 

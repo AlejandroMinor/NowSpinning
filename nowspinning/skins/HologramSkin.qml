@@ -55,6 +55,8 @@ Item {
     readonly property real boxFactor: implicitHeight / size
     readonly property rect faceRect: Qt.rect(0, 0, width, height)
     readonly property bool faceIsCircle: false
+    // Light doesn't cast one.
+    readonly property bool ownShadow: true
 
     readonly property real pic: size * 0.78
     readonly property real picX: (size - pic) / 2

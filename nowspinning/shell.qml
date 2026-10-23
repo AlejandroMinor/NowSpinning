@@ -12,6 +12,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
+import QtQuick.Effects
 import "skins"
 
 ShellRoot {
@@ -84,6 +85,8 @@ ShellRoot {
 
             resizing = true;
             change();
+            lastBoxW = boxW;
+            lastBoxH = boxH;
 
             const sw = screen ? screen.width : 1920;
             const sh = screen ? screen.height : 1080;
@@ -152,6 +155,7 @@ ShellRoot {
                 toggles.push({ key: "foilTilt", label: "Tilt", on: cfg.foilTilt });
             }
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
+            toggles.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
 
             return [
                 { id: "skin", icon: "skin",
@@ -272,11 +276,60 @@ ShellRoot {
         // have to be square (a CD case with the disc peeking out is wider
         // than tall). The progress ring also needs room, but only while
         // it's actually being drawn.
+        // The drop shadow under the skin needs room around it too, or the
+        // window's edge cuts its blur off.
         readonly property int ringBox: ringStyle ? Math.round(discSize * 1.14) : 0
+        readonly property int shadowPad: showShadow ? Math.round(discSize * 0.08) : 0
+
+        // When the box grows or shrinks on its own (the shadow's room coming
+        // or going, the ring switched on, the config edited by hand), the
+        // window moves by half the difference, so the skin stays centered
+        // where it was instead of jumping. keepingCenter() does the same for
+        // its own changes, which is why those are left alone here.
+        //
+        // Not while starting up: the config and the skin arrive at different
+        // moments, and the saved position already fits the box they make.
+        property int lastBoxW: 0
+        property int lastBoxH: 0
+        property bool settled: false
+        property bool recentering: false
+        Timer { running: true; interval: 1000; onTriggered: win.settled = true }
+        function recenter() {
+            const dw = boxW - lastBoxW;
+            const dh = boxH - lastBoxH;
+            lastBoxW = boxW;
+            lastBoxH = boxH;
+            if (!settled || resizing || (dw === 0 && dh === 0))
+                return;
+            // From where it's drawn, not where it's saved: they differ when
+            // the saved spot doesn't fit this output. Not written back to
+            // the config either: this can run in the middle of a hand edit,
+            // and a write then would race it. The next drag or pick saves it.
+            const sw = screen ? screen.width : 1920;
+            const sh = screen ? screen.height : 1080;
+            // Its own flag, not `resizing`: width and height change in two
+            // separate notifications, and the second must still get through.
+            recentering = true;
+            posX = Math.max(0, Math.min(sw - boxW, placedX - dw / 2));
+            posY = Math.max(0, Math.min(sh - boxH, placedY - dh / 2));
+            Qt.callLater(() => recentering = false);
+        }
+        onBoxWChanged: recenter()
+        onBoxHChanged: recenter()
         readonly property int boxW: Math.max(ringBox,
-            skinLoader.item ? Math.round(skinLoader.item.implicitWidth) : discSize)
+            (skinLoader.item ? Math.round(skinLoader.item.implicitWidth) : discSize) + 2 * shadowPad)
         readonly property int boxH: Math.max(ringBox,
-            skinLoader.item ? Math.round(skinLoader.item.implicitHeight) : discSize)
+            (skinLoader.item ? Math.round(skinLoader.item.implicitHeight) : discSize) + 2 * shadowPad)
+
+        // The skin's own bounds, in box coordinates: the box minus whatever
+        // room the ring and the shadow add around it.
+        readonly property rect skinRect: {
+            const skin = skinLoader.item;
+            const w = skin ? skin.implicitWidth : discSize;
+            const h = skin ? skin.implicitHeight : discSize;
+            return Qt.rect(Math.round((boxW - w) / 2), Math.round((boxH - h) / 2),
+                           Math.round(w), Math.round(h));
+        }
 
         // ---------------------------------------------------------------
         // The skin's face, in box coordinates.
@@ -314,7 +367,17 @@ ShellRoot {
         readonly property bool solidBox:
             skinLoader.item ? skinLoader.item.solidBox === true : false
         readonly property bool roundHit: faceIsCircle && !solidBox
-        readonly property rect body: solidBox ? Qt.rect(0, 0, boxW, boxH) : face
+        readonly property rect body: solidBox ? skinRect : face
+
+        // A soft shadow under the skin, as if it sat a little above the
+        // desktop. Drawn once from the face's outline (the whole object, for
+        // a solid one) and blurred once: a disc's outline doesn't change as
+        // it spins, so there's nothing to redo every frame. Skins that cast
+        // their own (the turntable, the card, the Polaroid) or that
+        // shouldn't cast one (light, like the hologram) say `ownShadow`.
+        readonly property bool showShadow: cfg.shadow
+            && !(skinLoader.item && skinLoader.item.ownShadow === true)
+        readonly property rect shadowRect: body
 
         // How much of the disc still peeks out once it's docked to an edge.
         readonly property int peek: Math.round(discSize * 0.18)
@@ -453,11 +516,11 @@ ShellRoot {
         // the position is already being driven a frame at a time, and
         // easing it there would just add lag on top of the compositor's own.
         Behavior on placedX {
-            enabled: !dragger.active && !win.resizing
+            enabled: !dragger.active && !win.resizing && !win.recentering
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
         Behavior on placedY {
-            enabled: !dragger.active && !win.resizing
+            enabled: !dragger.active && !win.resizing && !win.recentering
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
 
@@ -525,16 +588,16 @@ ShellRoot {
 
             x: stage.x + (win.collapsed
                 ? (win.dockX > 0 ? win.boxW - win.peek : 0)
-                : (win.roundHit ? win.face.x - grow : 0))
+                : (win.roundHit ? win.face.x - grow : win.skinRect.x))
             y: stage.y + (win.collapsed
                 ? (win.dockY > 0 ? win.boxH - win.peek : 0)
-                : (win.roundHit ? win.face.y - grow : 0))
+                : (win.roundHit ? win.face.y - grow : win.skinRect.y))
             width: win.collapsed && win.dockX !== 0 ? win.peek
                 : (win.collapsed ? win.boxW
-                : (win.roundHit ? win.face.width + 2 * grow : win.boxW))
+                : (win.roundHit ? win.face.width + 2 * grow : win.skinRect.width))
             height: win.collapsed && win.dockY !== 0 ? win.peek
                 : (win.collapsed ? win.boxH
-                : (win.roundHit ? win.face.height + 2 * grow : win.boxH))
+                : (win.roundHit ? win.face.height + 2 * grow : win.skinRect.height))
 
             // The docked sliver still counts even while open against an edge.
             regions: win.docked && !win.collapsed ? [dockStrip] : []
@@ -570,6 +633,31 @@ ShellRoot {
 
                 Behavior on x { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                 Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+
+                // Under the flip, so it stays put on the "desk" while the
+                // card turns over above it.
+                Item {
+                    visible: win.showShadow
+                    x: win.shadowRect.x
+                    y: win.shadowRect.y + win.shadowPad * 0.35
+                    width: win.shadowRect.width
+                    height: win.shadowRect.height
+                    opacity: 0.5 * win.discOpacity
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: win.faceIsCircle && !win.solidBox
+                            ? width / 2 : Math.round(win.discSize * 0.05)
+                        color: "black"
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            blurEnabled: true
+                            blur: 1
+                            blurMax: 32
+                            autoPaddingEnabled: true
+                        }
+                    }
+                }
 
                 // The flip. The front face is the skin; the back is generic,
                 // so the skin never has to know it exists.
@@ -1085,6 +1173,9 @@ ShellRoot {
                 // Tint the progress indicator (and a skin's accents, if it
                 // has any) with a color picked out of the cover art.
                 property bool tintFromArt: true
+
+                // A soft drop shadow under the skin.
+                property bool shadow: true
 
                 // Cassette only: how solid its plastic is. Lower for a clear
                 // shell that shows the tape inside.

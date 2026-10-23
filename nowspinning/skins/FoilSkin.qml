@@ -46,6 +46,8 @@ Item {
     readonly property real boxFactor: implicitHeight / size
     readonly property rect faceRect: Qt.rect((width - cardW) / 2, (height - cardH) / 2, cardW, cardH)
     readonly property bool faceIsCircle: false
+    // The card draws its own.
+    readonly property bool ownShadow: true
 
     readonly property bool tinted: !Qt.colorEqual(accent, "white")
 

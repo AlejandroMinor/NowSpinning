@@ -59,6 +59,9 @@
 //   function ownsPoint(x, y)              whether a tap there (skin coordinates)
 //                                         is one of its own keys, which then
 //                                         doesn't also flip the widget
+//   readonly property bool ownShadow      it draws its own drop shadow, or
+//                                         shouldn't cast one, so the window
+//                                         leaves its own out
 //   readonly property bool solidBox       the whole box is the object, not just
 //                                         the face: it's grabbed and hidden as
 //                                         a rectangle (the vinyl's turntable)
@@ -129,6 +132,8 @@ Item {
     readonly property rect faceRect: Qt.rect(discX - size / 2, discY - size / 2, size, size)
     readonly property bool faceIsCircle: true
     readonly property bool solidBox: showDeck
+    // The plinth draws its own.
+    readonly property bool ownShadow: showDeck
 
     implicitWidth: Math.round(boxW)
     implicitHeight: Math.round(boxH)
