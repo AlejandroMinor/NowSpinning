@@ -1,6 +1,6 @@
 # NowSpinning
 
-A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid), with transport controls on hover.
+A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card), with transport controls on hover.
 
 It's a player *client* only: it displays and controls whatever MPRIS player is already running. It doesn't play audio, manage a library, or handle a queue.
 
@@ -64,9 +64,9 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 
 | Key | Default | Meaning |
 |---|---|---|
-| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside), `"walkman"` (the cassette inside a portable player, its play key pressed in while playing), `"crt"` (the cover on an old TV, with scanlines and a glitch every few seconds), `"ascii"` (the cover drawn in characters), `"pixel"` (the cover pixelated), or `"polaroid"` (the cover as a photo with the title in marker; each new track drops a new one on top) |
+| `skin` | `"cd"` | `"vinyl"`, `"cd"` (the disc in its jewel case), `"disc"` (the same CD on its own, no case), `"cassette"` (the tape winds from one reel to the other as the track plays), `"minidisc"` (the shutter slides open while playing, showing the disc spinning inside), `"walkman"` (the cassette inside a portable player, its play key pressed in while playing), `"crt"` (the cover on an old TV, with scanlines and a glitch every few seconds), `"ascii"` (the cover drawn in characters), `"pixel"` (the cover pixelated), `"polaroid"` (the cover as a photo with the title in marker; each new track drops a new one on top), `"single"` (a 7" record with a 45 adapter in the cover's color), `"hologram"` (the cover projected in cyan from an emitter, with a signal dropout now and then), or `"foil"` (the cover as a holographic trading card, the foil sliding across it) |
 | `discSize` | `"medium"` | `"small"` (120px), `"medium"` (170), `"large"` (220), or `"xl"` (280); an exact pixel size also works as a string, e.g. `"200"`. Everything else scales from this |
-| `showArm` | `false` | Tonearm on the vinyl skin; the other skins ignore it |
+| `showArm` | `false` | Tonearm on the vinyl and 7" skins; the other skins ignore it |
 | `showDeck` | `false` | Vinyl skin only: the turntable under the record, with platter, speed keys and cue lever. Makes the widget wider; pairs well with `showArm` |
 | `spinDegreesPerSecond` | `9` | Rotation speed; `0` lets the skin pick its own (vinyl: 9, CD: 30, cassette and walkman: 40, for a reel holding half the tape; MiniDisc: 30) |
 | `artFull` | `false` | Full-face cover art, on skins that support it |
@@ -84,6 +84,13 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `showBezel` | `true` | CRT skin only: the dark plastic frame around the screen |
 | `effect` | `"random"` | CRT skin only: its glitch, `"slices"`, `"roll"`, `"static"`, `"split"`, `"channel"`, or `"random"` for a different one each time |
 | `showStack` | `true` | Polaroid skin only: the last track's photo left underneath the new one |
+| `holoColor` | `"cyan"` | Hologram skin only: `"cyan"`, `"green"`, `"pink"`, `"amber"`, `"art"` for the cover's own colour, or any hex colour like `"#ff8800"`. Anything else falls back to cyan. The settings card steps through the named ones |
+| `holoMotion` | `true` | Hologram skin only: the float, the turning emitter ring and the crawling scanlines; `false` holds it still |
+| `holoGlitch` | `true` | Hologram skin only: the signal dropouts every few seconds and on each new track |
+| `holoOpacity` | `1` | Hologram skin only: how solid the projection is, `1`, `0.75` or `0.5` |
+| `foilStyle` | `"rainbow"` | Foil skin only: the finish, `"rainbow"`, `"gold"`, `"silver"`, `"art"` for a sweep around the cover's own colour, or a hex colour like `"#ff8800"` to sweep around that one. Anything else falls back to the rainbow. The settings card steps through the named ones |
+| `foilMotion` | `true` | Foil skin only: the foil sliding across the card on its own while playing |
+| `foilTilt` | `true` | Foil skin only: the card turning toward the pointer, with the foil following it |
 | `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
 | `preferredPlayer` | `"org.mpris.MediaPlayer2.spotify"` | MPRIS bus name that wins when more than one player is running, even while paused. Empty string means no preference, so whichever player is actually playing wins instead |
 | `x`, `y` | `-1` | Saved position; `-1` means "use `anchor`". Overwritten automatically when dragged |

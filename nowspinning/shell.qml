@@ -100,11 +100,12 @@ ShellRoot {
         // something: the arm and deck on the vinyl, the ring on round faces,
         // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
-                                          "crt", "ascii", "pixel", "polaroid"]
+                                          "single", "crt", "ascii", "pixel", "polaroid",
+                                          "hologram", "foil"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
-            polaroid: "Polaroid"
+            polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil"
         })
 
         readonly property var settingsOptions: {
@@ -116,10 +117,10 @@ ShellRoot {
                 return t[0].toUpperCase() + t.slice(1);
             };
             const toggles = [];
-            if (skinName === "vinyl") {
+            if (skinName === "vinyl" || skinName === "single")
                 toggles.push({ key: "showArm", label: "Arm", on: cfg.showArm });
+            if (skinName === "vinyl")
                 toggles.push({ key: "showDeck", label: "Deck", on: cfg.showDeck });
-            }
             if (ringUsable)
                 toggles.push({ key: "ring", label: "Ring", on: progressStyle === "ring" });
             if (skinName === "cd")
@@ -139,6 +140,17 @@ ShellRoot {
             }
             if (skinName === "polaroid")
                 toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
+            if (skinName === "hologram") {
+                toggles.push({ key: "holoColor", label: "Color: " + cap(cfg.holoColor, "cyan"), on: false });
+                toggles.push({ key: "holoMotion", label: "Motion", on: cfg.holoMotion });
+                toggles.push({ key: "holoGlitch", label: "Glitch", on: cfg.holoGlitch });
+                toggles.push({ key: "holoOpacity", label: "Alpha: " + Math.round(cfg.holoOpacity * 100) + "%", on: false });
+            }
+            if (skinName === "foil") {
+                toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
+                toggles.push({ key: "foilMotion", label: "Motion", on: cfg.foilMotion });
+                toggles.push({ key: "foilTilt", label: "Tilt", on: cfg.foilTilt });
+            }
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
 
             return [
@@ -155,7 +167,10 @@ ShellRoot {
             peekSide: ["right", "left", "top", "bottom"],
             pixels: [64, 32, 24, 16],
             columns: [32, 48, 64],
-            effect: ["random", "slices", "roll", "static", "split", "channel"]
+            effect: ["random", "slices", "roll", "static", "split", "channel"],
+            holoColor: ["cyan", "green", "pink", "amber", "art"],
+            holoOpacity: [1, 0.75, 0.5],
+            foilStyle: ["rainbow", "gold", "silver", "art"]
         })
 
         function pickOption(section, key) {
@@ -188,7 +203,9 @@ ShellRoot {
 
         // The flat skins' options, each bound to its config key of the same
         // name when the skin has it.
-        readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack"]
+        readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
+                                            "holoColor", "holoMotion", "holoGlitch", "holoOpacity",
+                                            "foilStyle", "foilMotion", "foilTilt"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
                 if (item[key] !== undefined)
@@ -244,7 +261,10 @@ ShellRoot {
             "crt": crtSkin,
             "ascii": asciiSkin,
             "pixel": pixelSkin,
-            "polaroid": polaroidSkin
+            "polaroid": polaroidSkin,
+            "single": singleSkin,
+            "hologram": hologramSkin,
+            "foil": foilSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -816,6 +836,9 @@ ShellRoot {
         Component { id: asciiSkin; AsciiSkin {} }
         Component { id: pixelSkin; PixelSkin {} }
         Component { id: polaroidSkin; PolaroidSkin {} }
+        Component { id: singleSkin; SingleSkin {} }
+        Component { id: hologramSkin; HologramSkin {} }
+        Component { id: foilSkin; FoilSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -1071,13 +1094,24 @@ ShellRoot {
                 // ASCII: columns (32, 48, 64), in the cover's colours or
                 // white. CRT: its bezel, and the glitch ("random", "slices",
                 // "roll", "static", "split", "channel"). Polaroid: the last
-                // track's photo left underneath.
+                // track's photo left underneath. Hologram: its colour ("cyan",
+                // "green", "pink", "amber", "art"), motion, dropouts and
+                // how solid it is (1, 0.75, 0.5).
+                // Foil: its finish ("rainbow", "gold", "silver", "art"),
+                // drift and tilt.
                 property int pixels: 64
                 property int columns: 32
                 property bool colored: true
                 property bool showBezel: true
                 property string effect: "random"
                 property bool showStack: true
+                property string holoColor: "cyan"
+                property bool holoMotion: true
+                property bool holoGlitch: true
+                property real holoOpacity: 1
+                property string foilStyle: "rainbow"
+                property bool foilMotion: true
+                property bool foilTilt: true
 
                 // Edge it's docked to and hidden against: "", "left",
                 // "right", "top" or "bottom". Set by right clicking it.
