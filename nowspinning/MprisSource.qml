@@ -28,11 +28,18 @@ QtObject {
 
     readonly property bool available: current !== null
     readonly property bool playing:   current ? current.isPlaying : false
-    readonly property string artUrl:  current ? current.trackArtUrl : ""
+    // Browsers often send no cover: for YouTube, use the video thumbnail.
+    readonly property string artUrl:  current
+        ? (current.trackArtUrl || youtubeThumb(current.metadata["xesam:url"] ?? "")) : ""
     readonly property string title:   current ? current.trackTitle : ""
     readonly property string artist:  current ? current.trackArtist : ""
 
     readonly property string album: current ? current.trackAlbum : ""
+
+    function youtubeThumb(url) {
+        const m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/)|youtu\.be\/)([\w-]{11})/);
+        return m ? "https://i.ytimg.com/vi/" + m[1] + "/mqdefault.jpg" : "";
+    }
 
     readonly property bool canPrev:   current ? current.canGoPrevious : false
     readonly property bool canNext:   current ? current.canGoNext : false
