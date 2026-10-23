@@ -74,13 +74,6 @@ ShellRoot {
 
         readonly property var sizeOrder: ["small", "medium", "large", "xl"]
 
-        // What the size button shows: the preset's initial, or the exact
-        // number when the config holds one.
-        readonly property string sizeLabel: {
-            const i = sizeOrder.indexOf(String(cfg.discSize).trim());
-            return i >= 0 ? ["S", "M", "L", "XL"][i] : String(discSize);
-        }
-
         // Applies a change that resizes the box (a new size, a new skin)
         // around the widget's center instead of its top-left corner, so it
         // stays under the pointer that just clicked it, and saves it.
@@ -102,30 +95,51 @@ ShellRoot {
             Qt.callLater(() => resizing = false);
         }
 
-        // On the next preset up, wrapping around after the largest.
-        function cycleSize() {
-            const raw = String(cfg.discSize).trim();
-            let i = sizeOrder.indexOf(raw);
-            if (i < 0) {
-                // An exact number: on to the first preset bigger than it.
-                i = sizeOrder.findIndex(n => sizePresets[n] > discSize) - 1;
-                if (i < -1)
-                    i = -1;
-            }
-            keepingCenter(() => cfg.discSize = sizeOrder[(i + 1) % sizeOrder.length]);
-        }
-
-        // The skin button steps through these, in this order.
+        // What the settings page behind the gear offers, in the shape
+        // Controls.qml expects. Toggles only show up where they do
+        // something: the arm and deck on the vinyl, the ring on round faces,
+        // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman"
         })
-        readonly property string skinLabel: skinNames[skinName] ?? skinName
 
-        function cycleSkin() {
-            const i = skinOrder.indexOf(skinName);
-            keepingCenter(() => cfg.skin = skinOrder[(i + 1) % skinOrder.length]);
+        readonly property var settingsOptions: {
+            const size = String(cfg.discSize).trim();
+            const toggles = [];
+            if (skinName === "vinyl") {
+                toggles.push({ key: "showArm", label: "Arm", on: cfg.showArm });
+                toggles.push({ key: "showDeck", label: "Deck", on: cfg.showDeck });
+            }
+            if (ringUsable)
+                toggles.push({ key: "ring", label: "Ring", on: progressStyle === "ring" });
+            if (skinName === "cassette" || skinName === "walkman")
+                toggles.push({ key: "clear", label: "Clear", on: cfg.shellOpacity < 1 });
+            toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
+
+            return [
+                { id: "skin", icon: "skin",
+                  items: skinOrder.map(k => ({ key: k, label: skinNames[k], on: k === skinName })) },
+                { id: "size", icon: "size",
+                  items: sizeOrder.map((k, i) => ({ key: k, label: ["S", "M", "L", "XL"][i], on: k === size })) },
+                { id: "toggle", icon: "toggle", items: toggles }
+            ];
+        }
+
+        function pickOption(section, key) {
+            keepingCenter(() => {
+                if (section === "skin")
+                    cfg.skin = key;
+                else if (section === "size")
+                    cfg.discSize = key;
+                else if (key === "ring")
+                    cfg.progressStyle = cfg.progressStyle === "ring" ? "bar" : "ring";
+                else if (key === "clear")
+                    cfg.shellOpacity = cfg.shellOpacity < 1 ? 1 : 0.45;
+                else
+                    cfg[key] = !cfg[key];
+            });
         }
 
         readonly property int discSize: {
@@ -696,10 +710,8 @@ ShellRoot {
 
                 Controls {
                     id: controls
-                    sizeLabel: win.sizeLabel
-                    onResizeRequested: win.cycleSize()
-                    skinLabel: win.skinLabel
-                    onSkinRequested: win.cycleSkin()
+                    options: win.settingsOptions
+                    onOptionPicked: (section, key) => win.pickOption(section, key)
                     accent: accent.accent
                     accentAlpha: win.accentStroke.a
                     hint: win.ringPreview >= 0

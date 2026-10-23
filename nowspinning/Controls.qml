@@ -20,15 +20,17 @@ Item {
     property color accent: "white"
     property real accentAlpha: 0.55
 
-    // Current size, shown on the size button ("S", "M", "L", "XL").
-    property string sizeLabel: ""
-    signal resizeRequested()
-
     property bool showTransport: true
 
-    // Current skin, shown on the skin button.
-    property string skinLabel: ""
-    signal skinRequested()
+    // The settings page, behind the gear: sections of chips, each
+    // `{ id, icon, items: [{ key, label, on }] }`, built by the window,
+    // which also applies whatever gets picked.
+    property var options: []
+    signal optionPicked(string section, string key)
+
+    // Starts closed every time the overlay comes back.
+    property bool settingsOpen: false
+    onShownChanged: if (!shown) settingsOpen = false
 
     // Replaces the artist line while set: the time a click would jump to,
     // while the pointer is over the ring outside this overlay.
@@ -38,7 +40,7 @@ Item {
     // the bar can't seek right now. `x`/`y` are in `from`'s coordinates.
     // The bar is thin, so a band above and below it counts too.
     function barFraction(from, x, y) {
-        if (!shown || !showProgress || !source || !source.canSeek)
+        if (!shown || settingsOpen || !showProgress || !source || !source.canSeek)
             return -1;
         const p = bar.mapFromItem(from, x, y);
         if (p.x < 0 || p.x > bar.width)
@@ -83,6 +85,9 @@ Item {
         anchors.centerIn: parent
         width: parent.width * 0.74
         spacing: Math.round(root.size * 0.018)
+        opacity: root.settingsOpen ? 0 : 1
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 140 } }
 
         Text {
             width: parent.width
@@ -203,77 +208,109 @@ Item {
         }
     }
 
-    // Settings, apart from the transport row, near the bottom edge: they
-    // aren't playback, and more buttons in that row don't fit the small
-    // preset's circle. Each one steps through its options on every click.
-    component Pill: Item {
-        id: pill
-        property string kind
-        property string label
-        signal tapped()
+    // Settings page: one row of chips per section, an icon at its head.
+    // Picked straight from the list instead of stepping through options,
+    // and only the options that mean something for the current skin.
+    Column {
+        id: page
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: -gear.height / 2
+        width: parent.width * (root.circular ? 0.70 : 0.84)
+        spacing: Math.round(root.size * 0.03)
+        opacity: root.settingsOpen ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 140 } }
 
-        width: pillRow.width + Math.round(root.size * 0.06)
+        Repeater {
+            model: root.options
+
+            Flow {
+                id: section
+                required property var modelData
+                width: page.width
+                spacing: Math.round(root.size * 0.018)
+
+                IconButton {
+                    width: Math.round(root.size * 0.09); height: width
+                    kind: section.modelData.icon
+                    tint: Qt.rgba(1, 1, 1, 0.55)
+                    enabled: false
+                }
+
+                Repeater {
+                    model: section.modelData.items
+
+                    Item {
+                        id: chip
+                        required property var modelData
+                        width: chipText.implicitWidth + Math.round(root.size * 0.05)
+                        height: Math.round(root.size * 0.09)
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: chip.modelData.on
+                                ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.85)
+                                : Qt.rgba(1, 1, 1, chipHover.hovered ? 0.18 : 0.09)
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+
+                        Text {
+                            id: chipText
+                            anchors.centerIn: parent
+                            text: chip.modelData.label
+                            color: chip.modelData.on ? "#101215" : Qt.rgba(1, 1, 1, 0.8)
+                            font.pixelSize: Math.max(7, Math.round(root.size * 0.046))
+                            font.weight: Font.DemiBold
+                        }
+
+                        HoverHandler { id: chipHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler {
+                            onTapped: root.optionPicked(section.modelData.id, chip.modelData.key)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Whether a point lands on the gear or, while it's open, anywhere on
+    // the settings page, so the window's own tap (which flips the widget)
+    // leaves it alone. `x`/`y` are in `from`'s coordinates.
+    function onSettings(from, x, y) {
+        if (!shown)
+            return false;
+        const target = settingsOpen ? root : gear;
+        const p = target.mapFromItem(from, x, y);
+        return p.x >= 0 && p.y >= 0 && p.x <= target.width && p.y <= target.height;
+    }
+
+    // Gear, near the bottom edge: opens the settings page, and closes it.
+    Item {
+        id: gear
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: Math.round(root.size * (root.circular ? 0.07 : 0.05))
+        width: Math.round(root.size * 0.17)
         height: Math.round(root.size * 0.11)
 
         Rectangle {
             anchors.fill: parent
             radius: height / 2
-            color: Qt.rgba(1, 1, 1, pillHover.hovered ? 0.16 : 0.08)
+            color: root.settingsOpen
+                ? Qt.rgba(1, 1, 1, 0.26)
+                : Qt.rgba(1, 1, 1, gearHover.hovered ? 0.16 : 0.08)
             Behavior on color { ColorAnimation { duration: 120 } }
         }
 
-        Row {
-            id: pillRow
+        IconButton {
             anchors.centerIn: parent
-            spacing: Math.round(root.size * 0.012)
-
-            IconButton {
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.round(root.size * 0.08); height: width
-                kind: pill.kind
-                enabled: false   // the whole pill takes the click
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: pill.label
-                color: Qt.rgba(1, 1, 1, 0.8)
-                font.pixelSize: Math.max(7, Math.round(root.size * 0.05))
-                font.weight: Font.DemiBold
-            }
+            width: Math.max(10, Math.round(root.size * 0.09)); height: width
+            kind: "gear"
+            enabled: false   // the whole pill takes the click
         }
 
-        HoverHandler { id: pillHover; cursorShape: Qt.PointingHandCursor }
-        TapHandler { onTapped: pill.tapped() }
-    }
-
-    // Whether a point lands on the settings buttons, so the window's own
-    // tap (which flips the widget) can leave it alone. `x`/`y` are in
-    // `from`'s coordinates.
-    function onSettings(from, x, y) {
-        if (!shown)
-            return false;
-        const p = settings.mapFromItem(from, x, y);
-        return p.x >= 0 && p.y >= 0 && p.x <= settings.width && p.y <= settings.height;
-    }
-
-    Row {
-        id: settings
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: Math.round(root.size * (root.circular ? 0.07 : 0.05))
-        spacing: Math.round(root.size * 0.025)
-
-        Pill {
-            kind: "skin"
-            label: root.skinLabel
-            onTapped: root.skinRequested()
-        }
-
-        Pill {
-            kind: "size"
-            label: root.sizeLabel
-            onTapped: root.resizeRequested()
-        }
+        HoverHandler { id: gearHover; cursorShape: Qt.PointingHandCursor }
+        TapHandler { onTapped: root.settingsOpen = !root.settingsOpen }
     }
 }

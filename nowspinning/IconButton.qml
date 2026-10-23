@@ -5,7 +5,7 @@ import QtQuick
 Item {
     id: btn
 
-    property string kind: "play"   // prev | play | pause | next | size | skin
+    property string kind: "play"   // prev | play | pause | next | size | skin | gear | toggle
     property bool active: true
     property color tint: "white"
     signal activated()
@@ -71,6 +71,35 @@ Item {
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.arc(cx, cy, s * 0.42, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (btn.kind === "gear") {
+                // Six chunky teeth around a ring, and the hole: fewer and
+                // fatter than a real gear, so it still reads at 10px.
+                const g = width * 0.5;
+                ctx.save();
+                ctx.translate(cx, cy);
+                for (let i = 0; i < 6; i++) {
+                    ctx.rotate(Math.PI / 3);
+                    ctx.fillRect(-g * 0.22, -g * 0.98, g * 0.44, g * 0.5);
+                }
+                ctx.restore();
+                ctx.beginPath();
+                ctx.arc(cx, cy, g * 0.68, 0, Math.PI * 2);
+                ctx.arc(cx, cy, g * 0.28, 0, Math.PI * 2, true);
+                ctx.fill();
+            } else if (btn.kind === "toggle") {
+                // A switch, on.
+                ctx.lineWidth = Math.max(1.2, width * 0.075);
+                const sw = s * 1.0, sh = s * 0.55;
+                ctx.beginPath();
+                ctx.moveTo(cx - sw + sh, cy - sh);
+                ctx.lineTo(cx + sw - sh, cy - sh);
+                ctx.arc(cx + sw - sh, cy, sh, -Math.PI / 2, Math.PI / 2);
+                ctx.lineTo(cx - sw + sh, cy + sh);
+                ctx.arc(cx - sw + sh, cy, sh, Math.PI / 2, Math.PI * 1.5);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + sw - sh, cy, sh * 0.55, 0, Math.PI * 2);
                 ctx.fill();
             } else if (btn.kind === "prev") {
                 drawTriangle(cx + s * 0.40, false);

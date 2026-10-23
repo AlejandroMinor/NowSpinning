@@ -89,7 +89,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 - **Tap the disc's rim** (not the buttons) to reveal the track info: title, artist, album, elapsed time.
 - **Click the progress ring** (or the bar, on skins that use one) to jump to that point in the track. Hovering it shows where you'd land.
 - **Scroll** over the disc to change volume.
-- **Hover** to reveal transport controls (previous / play-pause / next), and two buttons below them that step through options on every click and save them: the skin (`vinyl`, `cd`, `disc`, `cassette`, `minidisc`, `walkman`) and the size (`small`, `medium`, `large`, `xl`). Either one grows or shrinks the widget around its center.
+- **Hover** to reveal transport controls (previous / play-pause / next), and a gear below them. The gear opens a settings page in the same spot: pick the skin and the size straight from the list, and switch the options that apply to the current skin (the vinyl's arm and deck, the ring around round faces, the tapes' clear shell, the tint from the cover art). Changes save to `config.json` at once, and the widget grows or shrinks around its center.
 
 Cover art crossfades in on its own, and switches tracks smoothly rather than popping. On the CD skin specifically, a real track change also pulls the disc back into the case for a moment before it settles back out, showing the bare disc where the cover normally sits.
 
