@@ -1,6 +1,7 @@
 {
     "anchor": "bottom",
     "artFull": false,
+    "audioWave": true,
     "colored": true,
     "columns": 32,
     "discOpacity": 1,

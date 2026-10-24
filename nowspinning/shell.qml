@@ -104,12 +104,13 @@ ShellRoot {
         // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
                                           "single", "crt", "ascii", "pixel", "polaroid",
-                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix"]
+                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix", "terminal"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
             polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil",
-            hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc", matrix: "Matrix"
+            hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc", matrix: "Matrix",
+            terminal: "Terminal"
         })
 
         readonly property var settingsOptions: {
@@ -160,22 +161,31 @@ ShellRoot {
                 toggles.push({ key: "holoOpacity", label: "Alpha: " + Math.round(cfg.holoOpacity * 100) + "%", on: false });
                 toggles.push({ key: "holoBase", label: "Base", on: cfg.holoBase });
             }
-            toggles.push({ key: "layer", label: "Layer: " + cap(cfg.layer, "overlay"), on: false });
-            toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
-            toggles.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
-            toggles.push({ key: "lyrics", label: "Lyrics", on: cfg.lyrics });
+            // The widget's own, whatever the skin.
+            const globals = [];
+            globals.push({ key: "layer", label: "Layer: " + cap(cfg.layer, "overlay"), on: false });
+            globals.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
+            globals.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
+            globals.push({ key: "audioWave", label: "Audio", on: cfg.audioWave });
+            globals.push({ key: "lyrics", label: "Lyrics", on: cfg.lyrics });
             if (cfg.lyrics) {
-                toggles.push({ key: "lyricsLines", label: "Lines: " + cfg.lyricsLines, on: false });
-                toggles.push({ key: "lyricsSize", label: "Text: " + cap(cfg.lyricsSize, "medium")[0], on: false });
+                globals.push({ key: "lyricsLines", label: "Lines: " + cfg.lyricsLines, on: false });
+                globals.push({ key: "lyricsSize", label: "Text: " + cap(cfg.lyricsSize, "medium")[0], on: false });
             }
 
-            return [
+            // The current skin's options first, under its name, then the
+            // widget's: size and the rest, the same for every skin.
+            const sections = [
                 { id: "skin", icon: "skin",
-                  items: skinOrder.map(k => ({ key: k, label: skinNames[k], on: k === skinName })) },
-                { id: "size", icon: "size",
-                  items: sizeOrder.map((k, i) => ({ key: k, label: ["S", "M", "L", "XL"][i], on: k === size })) },
-                { id: "toggle", icon: "toggle", items: toggles }
+                  items: skinOrder.map(k => ({ key: k, label: skinNames[k], on: k === skinName })) }
             ];
+            if (toggles.length > 0)
+                sections.push({ id: "toggle", icon: "toggle", title: (skinNames[skinName] ?? skinName) + " options",
+                                items: toggles });
+            sections.push({ id: "size", icon: "size", title: "Widget",
+                            items: sizeOrder.map((k, i) => ({ key: k, label: ["S", "M", "L", "XL"][i], on: k === size })) });
+            sections.push({ id: "global", icon: "toggle", items: globals });
+            return sections;
         }
 
         // Options that step through values instead of switching on and off.
@@ -288,7 +298,8 @@ ShellRoot {
             "shard": shardSkin,
             "neon": neonSkin,
             "neondisc": neonDiscSkin,
-            "matrix": matrixSkin
+            "matrix": matrixSkin,
+            "terminal": terminalSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -556,6 +567,15 @@ ShellRoot {
         MprisSource { id: source; prefer: cfg.preferredPlayer }
 
         Lyrics { id: lyrics; player: source; enabled: cfg.lyrics }
+
+        // The music's own levels for the progress wave, while it's playing
+        // and the wave is on screen: the ring, or the bar in the open
+        // controls.
+        AudioLevels {
+            id: audio
+            active: cfg.audioWave && source.playing && !win.collapsed && !win.flipped
+                && (win.ringStyle ? source.duration > 0 : controls.shown)
+        }
 
         LyricsWindow {
             screen: win.screen
@@ -910,6 +930,7 @@ ShellRoot {
                     preview: win.ringPreview
                     color: win.accentStroke
                     waves: 14
+                    levels: audio.levels
 
                     // The wave travels while playing and flattens on pause.
                     // When the style is "bar" this isn't even drawn, so
@@ -940,6 +961,7 @@ ShellRoot {
                     source: source
                     shown: win.controlsOpen && !win.collapsed && !win.flipped
                     showProgress: !win.ringStyle
+                    levels: audio.levels
                 }
             }
         }
@@ -947,7 +969,9 @@ ShellRoot {
         SettingsCard {
             id: settingsCard
             host: win
-            face: Qt.rect(stage.x + win.face.x, stage.y + win.face.y, win.face.width, win.face.height)
+            // Beside the whole widget, not just its face: the vinyl's deck
+            // and arm, the CD peeking out and the ring all stick out past it.
+            face: Qt.rect(stage.x, stage.y, win.boxW, win.boxH)
             open: controls.settingsOpen
             options: win.settingsOptions
             skins: win.skins
@@ -982,6 +1006,7 @@ ShellRoot {
         Component { id: neonSkin; NeonSkin {} }
         Component { id: neonDiscSkin; NeonDiscSkin {} }
         Component { id: matrixSkin; MatrixSkin {} }
+        Component { id: terminalSkin; TerminalSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -1248,6 +1273,10 @@ ShellRoot {
 
                 // A soft drop shadow under the skin.
                 property bool shadow: true
+
+                // The progress wave following the music, read from cava
+                // (when it's installed); off, or without cava, a plain sine.
+                property bool audioWave: true
 
                 // Synced lyrics from lrclib.net under the widget, with the
                 // lines around the current one (3) or on its own (1).

@@ -15,6 +15,9 @@ Item {
 
     // Time bar drawn in here, as an alternative to the ring around the disc.
     property bool showProgress: false
+    // How loud the music is, band by band, for the bar's wave; see
+    // AudioLevels.qml. Empty = a plain sine.
+    property var levels: []
 
     // Color for the time bar and the volume fill; see ArtAccent.qml.
     property color accent: "white"
@@ -156,6 +159,7 @@ Item {
                 visible: root.showProgress && root.source && root.source.duration > 0
                 progress: root.source ? root.source.progress : 0
                 waves: 7
+                levels: root.levels
                 amplitude: root.source && root.source.playing
                     ? Math.max(1.5, root.size * 0.014) : 0
                 Behavior on amplitude {

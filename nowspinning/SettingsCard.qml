@@ -1,6 +1,9 @@
 // The settings, behind the gear: a card beside the widget (flipped to the
-// other side when there's no room), in three sections: Skin, a live preview
-// of each with what is playing; Size; and the current skin's options. Built
+// other side when there's no room), in three blocks: Skin, a live preview
+// of each with what is playing; the current skin's own options, under its
+// name; and the widget's, the same for every skin (size, layer, tint,
+// shadow, lyrics). A section can name its own heading (`title`); one
+// without a heading carries on the block above it, with no line between. Built
 // from the window's `settingsOptions`; picks go back through `picked`.
 // Stays open until the gear or its ✕ close it.
 import QtQuick
@@ -13,7 +16,7 @@ PopupWindow {
     property var host            // the widget's window
     property rect face           // the face, in the window's coordinates
     property bool open: false
-    property var options: []     // [{ id, items: [{ key, label, on }] }]
+    property var options: []     // [{ id, title?, items: [{ key, label, on }] }]
     property var skins: ({})     // skin name -> Component
     property string artUrl: ""
     property bool playing: false
@@ -23,6 +26,7 @@ PopupWindow {
     signal closeRequested()
 
     readonly property var headings: ({ skin: "Skin", size: "Size", toggle: "Options" })
+    function heading(s) { return s.title ?? headings[s.id] ?? ""; }
     readonly property int tile: 60
     readonly property int columns: 5
 
@@ -103,16 +107,19 @@ PopupWindow {
                 Layout.fillWidth: true
                 spacing: 6
 
+                readonly property string title: card.heading(modelData)
+
                 Rectangle {
-                    visible: section.index > 0
+                    visible: section.index > 0 && section.title !== ""
                     Layout.fillWidth: true
                     Layout.topMargin: 2
                     implicitHeight: 1
                     color: Qt.rgba(1, 1, 1, 0.08)
                 }
                 RowLayout {
+                    visible: section.title !== "" || section.index === 0
                     Layout.fillWidth: true
-                    Heading { text: card.headings[section.modelData.id] ?? section.modelData.id }
+                    Heading { text: section.title }
                     Item { Layout.fillWidth: true }
                     // Closes the card; only on the first section's row.
                     Text {

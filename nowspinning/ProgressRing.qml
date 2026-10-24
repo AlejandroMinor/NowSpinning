@@ -10,9 +10,13 @@
 // you'd lose the ability to read "how much is left" at a glance. What moves
 // is the wave's phase: the crests travel along a path that stays put.
 //
-// This isn't a real audio spectrum: MPRIS doesn't expose audio, only
-// position and duration. The wave is a plain sine; what's real is how much
-// of it has been drawn.
+// MPRIS doesn't expose audio, only position and duration, so on its own
+// the wave is a plain sine; what's real is how much of it has been drawn.
+// Given `levels` (AudioLevels.qml, from cava), it follows the music
+// instead: each stretch of the path swings as hard as its band is loud,
+// with a second, faster wave mixed in, like a trace on an oscilloscope.
+// Around the ring the bands run out from the top both ways, lows at 12
+// o'clock; along the bar, lows on the left.
 import QtQuick
 
 Item {
@@ -36,6 +40,22 @@ Item {
     property real flowSpeed: 2.8     // radians per second
     property real phase: 0
 
+    // Band levels, 0..1, lows first. Empty = the plain sine.
+    property var levels: []
+
+    // How loud the music is at `t` (0..1 along the whole path), between
+    // the two nearest bands.
+    function levelAt(t) {
+        const n = levels.length;
+        if (n === 0)
+            return 0;
+        const u = linear ? t : 1 - Math.abs(2 * t - 1);
+        const f = Math.max(0, Math.min(n - 1, u * (n - 1)));
+        const i = Math.floor(f);
+        const j = Math.min(n - 1, i + 1);
+        return levels[i] + (levels[j] - levels[i]) * (f - i);
+    }
+
     onProgressChanged: cv.requestPaint()
     onAmplitudeChanged: cv.requestPaint()
     onPhaseChanged: cv.requestPaint()
@@ -44,6 +64,7 @@ Item {
     onWidthChanged: cv.requestPaint()
     onPreviewChanged: cv.requestPaint()
     onColorChanged: cv.requestPaint()
+    onLevelsChanged: cv.requestPaint()
 
     // The point `t` (0..1) of the way along the path, on its axis: no wave.
     function pointAt(t) {
@@ -129,11 +150,15 @@ Item {
             ctx.strokeStyle = ring.color;
             ctx.beginPath();
 
+            const heard = ring.levels.length > 0;
             let hx = 0, hy = 0;
             for (let i = 0; i <= steps; i++) {
                 const t = p * (i / steps);
-                const swing = ring.amplitude
-                    * Math.sin(t * tau * ring.waves - ring.phase);
+                const k = t * tau * ring.waves;
+                const swing = heard
+                    ? ring.amplitude * (0.3 + 1.6 * ring.levelAt(t))
+                        * (0.7 * Math.sin(k - ring.phase) + 0.3 * Math.sin(k * 2.7 + ring.phase * 2))
+                    : ring.amplitude * Math.sin(k - ring.phase);
 
                 if (ring.linear) {
                     hx = ring.headRadius + t * span;
