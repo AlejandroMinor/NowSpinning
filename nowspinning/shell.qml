@@ -104,11 +104,12 @@ ShellRoot {
         // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
                                           "single", "crt", "ascii", "pixel", "polaroid",
-                                          "hologram", "foil"]
+                                          "hologram", "foil", "hud", "shard", "neon", "neondisc"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
-            polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil"
+            polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil",
+            hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc"
         })
 
         readonly property var settingsOptions: {
@@ -282,7 +283,11 @@ ShellRoot {
             "polaroid": polaroidSkin,
             "single": singleSkin,
             "hologram": hologramSkin,
-            "foil": foilSkin
+            "foil": foilSkin,
+            "hud": hudSkin,
+            "shard": shardSkin,
+            "neon": neonSkin,
+            "neondisc": neonDiscSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -780,6 +785,8 @@ ShellRoot {
                                     item.player = source;
                                 if (item.title !== undefined)
                                     item.title = Qt.binding(() => source.title);
+                                if (item.artist !== undefined)
+                                    item.artist = Qt.binding(() => source.artist);
                                 if (item.previousArt !== undefined) {
                                     item.previousArt = Qt.binding(() => source.previousArtUrl);
                                     item.previousTitle = Qt.binding(() => source.previousTitle);
@@ -969,6 +976,10 @@ ShellRoot {
         Component { id: singleSkin; SingleSkin {} }
         Component { id: hologramSkin; HologramSkin {} }
         Component { id: foilSkin; FoilSkin {} }
+        Component { id: hudSkin; HudSkin {} }
+        Component { id: shardSkin; ShardSkin {} }
+        Component { id: neonSkin; NeonSkin {} }
+        Component { id: neonDiscSkin; NeonDiscSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
