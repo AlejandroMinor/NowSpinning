@@ -102,10 +102,17 @@ ShellRoot {
         // Controls.qml expects. Toggles only show up where they do
         // something: the arm and deck on the vinyl, the ring on round faces,
         // the clear shell on the tapes.
-        readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
-                                          "single", "crt", "ascii", "pixel", "polaroid",
-                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix", "terminal",
-                                          "session", "sleeve", "deco", "gallery", "ticket", "magazine", "stamp", "episode", "phantom"]
+        // Grouped in the settings card, one group at a time, so it isn't a
+        // wall of 28 live previews.
+        readonly property var skinGroups: [
+            { key: "physical", label: "Physical",
+              skins: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman", "single"] },
+            { key: "flat", label: "Flat", skins: ["crt", "ascii", "pixel", "polaroid", "hologram", "foil"] },
+            { key: "cyber", label: "Cyber", skins: ["hud", "shard", "neon", "neondisc", "matrix", "terminal"] },
+            { key: "print", label: "Print", skins: ["sleeve", "deco", "gallery", "ticket", "magazine", "stamp"] },
+            { key: "anime", label: "Anime", skins: ["session", "episode", "phantom"] }
+        ]
+        readonly property var skinOrder: skinGroups.reduce((all, g) => all.concat(g.skins), [])
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
@@ -184,7 +191,9 @@ ShellRoot {
             // rest, the same for every skin.
             const sections = [
                 { id: "skin", icon: "skin",
-                  items: skinOrder.map(k => ({ key: k, label: skinNames[k], on: k === skinName })) }
+                  groups: skinGroups.map(g => ({ key: g.key, label: g.label })),
+                  items: skinGroups.reduce((all, g) => all.concat(g.skins.map(k => (
+                      { key: k, label: skinNames[k], on: k === skinName, group: g.key }))), []) }
             ];
             if (toggles.length > 0)
                 sections.push({ id: "toggle", icon: "toggle", title: (skinNames[skinName] ?? skinName) + " options",

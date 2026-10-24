@@ -1,7 +1,7 @@
 // The settings, behind the gear: a card beside the widget (flipped to the
-// other side when there's no room), in two tabs. Skin: a live preview of
-// each with what is playing, and the current skin's own options under its
-// name. Widget: what's the same for every skin (size, layer, tint, shadow,
+// other side when there's no room), in two tabs. Skin: the skins in groups
+// (Physical, Flat, Cyber...), one group at a time, each a live preview with
+// what is playing, and the current skin's own options under its name. Widget: what's the same for every skin (size, layer, tint, shadow,
 // audio, lyrics), from the sections marked `block: "widget"`. A section can
 // name its own heading (`title`); one without a heading carries on the one
 // above it, with no line between. Built
@@ -115,13 +115,82 @@ PopupWindow {
             text: section.title
         }
 
-            // Skin: a tile per skin, drawing it live.
+            // Skin: the groups, then a tile per skin of the shown one,
+            // drawing it live.
+            Flow {
+                visible: section.modelData.id === "skin" && (section.modelData.groups ?? []).length > 0
+                Layout.fillWidth: true
+                spacing: 4
+                Repeater {
+                    model: section.modelData.id === "skin" ? (section.modelData.groups ?? []) : []
+                    delegate: Item {
+                        id: groupChip
+                        required property var modelData
+                        readonly property bool current: card.shownGroup(section.modelData) === modelData.key
+                        width: groupText.implicitWidth + 16
+                        height: 22
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: groupChip.current ? Qt.rgba(1, 1, 1, 0.14)
+                                : Qt.rgba(1, 1, 1, groupHover.hovered ? 0.08 : 0)
+                            border { width: 1; color: Qt.rgba(1, 1, 1, groupChip.current ? 0 : 0.1) }
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+                        Text {
+                            id: groupText
+                            anchors.centerIn: parent
+                            text: groupChip.modelData.label
+                            color: Qt.rgba(1, 1, 1, groupChip.current ? 0.95 : 0.6)
+                            font { pixelSize: 11; weight: Font.DemiBold }
+                        }
+                        HoverHandler { id: groupHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: card.skinGroup = groupChip.modelData.key }
+                    }
+                }
+            }
             Grid {
+                id: skinGrid
                 visible: section.modelData.id === "skin"
                 columns: card.columns
                 spacing: 6
+
+                // As tall as the biggest group, whichever is shown, so the
+                // card keeps its size when going from one to another.
+                readonly property int most: {
+                    const counts = {};
+                    for (const i of section.modelData.items ?? [])
+                        counts[i.group] = (counts[i.group] ?? 0) + 1;
+                    return Math.max(1, ...Object.values(counts));
+                }
+                readonly property int rows: Math.ceil(most / card.columns)
+                Layout.minimumHeight: rows * (card.tile + 14) + (rows - 1) * spacing
+                Layout.alignment: Qt.AlignTop
+
+                // A new group fades in, sliding from the side it's on.
+                readonly property int groupIndex: (section.modelData.groups ?? [])
+                    .findIndex(g => g.key === card.shownGroup(section.modelData))
+                property int lastIndex: -1
+                property int direction: 1
+                onGroupIndexChanged: {
+                    if (lastIndex >= 0 && groupIndex !== lastIndex) {
+                        direction = groupIndex > lastIndex ? 1 : -1;
+                        entering.restart();
+                    }
+                    lastIndex = groupIndex;
+                }
+                Component.onCompleted: lastIndex = groupIndex
+                transform: Translate { id: slide }
+                ParallelAnimation {
+                    id: entering
+                    NumberAnimation { target: skinGrid; property: "opacity"; from: 0; to: 1; duration: 200; easing.type: Easing.OutQuad }
+                    NumberAnimation { target: slide; property: "x"; from: 18 * skinGrid.direction; to: 0; duration: 260; easing.type: Easing.OutCubic }
+                }
+
                 Repeater {
-                    model: section.modelData.id === "skin" ? section.modelData.items : []
+                    model: section.modelData.id === "skin"
+                        ? section.modelData.items.filter(i => !i.group || i.group === card.shownGroup(section.modelData))
+                        : []
                     delegate: Rectangle {
                         id: skinTile
                         required property var modelData
@@ -205,6 +274,17 @@ PopupWindow {
     readonly property var widgetSections: options.filter(s => s.block === "widget")
 
     property string tab: "skin"
+
+    // Which group of skins the Skin tab shows: picked with its chips, or,
+    // until one is, the current skin's. Reopening goes back to that.
+    property string skinGroup: ""
+    onOpenChanged: if (open) skinGroup = ""
+    function shownGroup(section) {
+        if (skinGroup !== "")
+            return skinGroup;
+        const current = section.items.find(i => i.on);
+        return current ? current.group : (section.groups?.[0]?.key ?? "");
+    }
 
     ColumnLayout {
         id: content
