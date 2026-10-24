@@ -173,8 +173,9 @@ ShellRoot {
                 globals.push({ key: "lyricsSize", label: "Text: " + cap(cfg.lyricsSize, "medium")[0], on: false });
             }
 
-            // The current skin's options first, under its name, then the
-            // widget's: size and the rest, the same for every skin.
+            // The skin tab: the skins, then the current one's options under
+            // its name. The widget tab (`block: "widget"`): size and the
+            // rest, the same for every skin.
             const sections = [
                 { id: "skin", icon: "skin",
                   items: skinOrder.map(k => ({ key: k, label: skinNames[k], on: k === skinName })) }
@@ -182,9 +183,9 @@ ShellRoot {
             if (toggles.length > 0)
                 sections.push({ id: "toggle", icon: "toggle", title: (skinNames[skinName] ?? skinName) + " options",
                                 items: toggles });
-            sections.push({ id: "size", icon: "size", title: "Widget",
+            sections.push({ id: "size", icon: "size", block: "widget",
                             items: sizeOrder.map((k, i) => ({ key: k, label: ["S", "M", "L", "XL"][i], on: k === size })) });
-            sections.push({ id: "global", icon: "toggle", items: globals });
+            sections.push({ id: "global", icon: "toggle", block: "widget", items: globals });
             return sections;
         }
 
