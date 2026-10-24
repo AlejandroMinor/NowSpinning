@@ -25,6 +25,9 @@ Item {
     property bool blankLabel: false
     property bool lightMotion: true   // the rain falling
     property bool lightTilt: true     // the screen turning toward the pointer
+    // How loud the low end is right now, 0..1, while `audioReact` is on
+    // (AudioLevels.qml); 0 otherwise, and the skin keeps its own pulse.
+    property real audioLevel: 0
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -82,7 +85,8 @@ Item {
             fillMode: Image.PreserveAspectCrop
             sourceSize { width: 400; height: 400 }
             asynchronous: true
-            opacity: 0.35 + 0.55 * skin.decoded
+            // The beat brings the cover up through the rain for a moment.
+            opacity: Math.min(1, 0.35 + 0.55 * skin.decoded + 0.3 * skin.audioLevel)
             layer.enabled: true
             layer.effect: MultiEffect {
                 colorization: 1 - 0.6 * skin.decoded

@@ -1,6 +1,7 @@
 {
     "anchor": "bottom",
     "artFull": false,
+    "audioReact": true,
     "audioWave": true,
     "colored": true,
     "columns": 32,
@@ -33,6 +34,7 @@
     "showDeck": false,
     "showStack": true,
     "skin": "cd",
+    "sleeveColor": "art",
     "spinDegreesPerSecond": 0,
     "tintFromArt": true,
     "x": -1,

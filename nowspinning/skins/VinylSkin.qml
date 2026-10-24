@@ -46,6 +46,8 @@
 //   property real progress                0..1 of the current track, for a
 //                                         skin that shows it on the object
 //                                         itself (the cassette's tape)
+//   property real duration                the track's length in seconds, 0
+//                                         when unknown (the stamp's value)
 //   property color accent                 a color picked out of the cover art,
 //                                         or white when there isn't one
 //   property string title                 the track's title, for a skin that

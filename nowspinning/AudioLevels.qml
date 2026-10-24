@@ -22,6 +22,14 @@ Item {
 
     property var levels: []
     readonly property bool live: levels.length > 0
+    // The low end, the first few bands: what a skin pulses with.
+    readonly property real bass: {
+        const n = Math.min(3, levels.length);
+        let sum = 0;
+        for (let i = 0; i < n; i++)
+            sum += levels[i];
+        return n > 0 ? sum / n : 0;
+    }
 
     // Its own config, written next to the session's runtime files on each
     // start: raw numbers on stdout, one line per frame, 0..1000.

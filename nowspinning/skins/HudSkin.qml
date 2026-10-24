@@ -30,6 +30,11 @@ Item {
     property bool blankLabel: false
     property bool lightMotion: true   // the scan bar and the glitches on their own
     property bool lightTilt: true     // the panel turning toward the pointer
+    // How loud the low end is right now, 0..1, while `audioReact` is on
+    // (AudioLevels.qml); 0 otherwise, and the skin keeps its own pulse.
+    property real audioLevel: 0
+    // A hard hit glitches it too.
+    onAudioLevelChanged: if (audioLevel > 0.9) glitch()
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -111,7 +116,7 @@ Item {
             shadowBlur: 0.8
             shadowHorizontalOffset: 0
             shadowVerticalOffset: 0
-            shadowOpacity: light.following ? 0.7 : 0.25
+            shadowOpacity: light.following ? 0.7 : 0.25 + 0.45 * skin.audioLevel
             Behavior on shadowOpacity { NumberAnimation { duration: 220 } }
         }
 

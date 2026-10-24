@@ -27,6 +27,9 @@ Item {
     property bool blankLabel: false
     property bool lightMotion: true   // the flicker now and then
     property bool lightTilt: true     // the sign turning toward the pointer
+    // How loud the low end is right now, 0..1, while `audioReact` is on
+    // (AudioLevels.qml); 0 otherwise, and the skin keeps its own pulse.
+    property real audioLevel: 0
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -59,9 +62,12 @@ Item {
 
     // How hard the tube burns, 0..1. Low while paused, off on the back.
     readonly property real level: blankLabel ? 0.08
-        : light.following ? 1 : (playing ? 0.85 : 0.45)
+        : light.following ? 1
+        : !playing ? 0.45
+        : audioLevel > 0 ? 0.5 + 0.5 * audioLevel : 0.85
     property real steady: level
-    Behavior on steady { NumberAnimation { duration: 300 } }
+    // Quick enough to follow a beat.
+    Behavior on steady { NumberAnimation { duration: skin.audioLevel > 0 ? 90 : 300 } }
     // Cut by a flicker now and then.
     property real flick: 1
     readonly property real power: steady * flick

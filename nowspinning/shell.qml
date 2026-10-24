@@ -104,13 +104,16 @@ ShellRoot {
         // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
                                           "single", "crt", "ascii", "pixel", "polaroid",
-                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix", "terminal"]
+                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix", "terminal",
+                                          "session", "sleeve", "deco", "gallery", "ticket", "magazine", "stamp", "episode", "phantom"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
             polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil",
             hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc", matrix: "Matrix",
-            terminal: "Terminal"
+            terminal: "Terminal", session: "Session", sleeve: "Sleeve", deco: "Deco",
+            gallery: "Gallery", ticket: "Ticket", magazine: "Magazine", stamp: "Stamp",
+            episode: "Episode", phantom: "Phantom"
         })
 
         readonly property var settingsOptions: {
@@ -147,6 +150,8 @@ ShellRoot {
                 toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
             if (skinName === "foil")
                 toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
+            if (skinName === "sleeve")
+                toggles.push({ key: "sleeveColor", label: "Color: " + cap(cfg.sleeveColor, "art"), on: false });
             // The light: every skin follows the pointer, most also drift on
             // their own (the discs don't: room light stays put).
             const skinItem = skinLoader.item;
@@ -166,7 +171,8 @@ ShellRoot {
             globals.push({ key: "layer", label: "Layer: " + cap(cfg.layer, "overlay"), on: false });
             globals.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
             globals.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
-            globals.push({ key: "audioWave", label: "Audio", on: cfg.audioWave });
+            globals.push({ key: "audioWave", label: "Audio wave", on: cfg.audioWave });
+            globals.push({ key: "audioReact", label: "Beat", on: cfg.audioReact });
             globals.push({ key: "lyrics", label: "Lyrics", on: cfg.lyrics });
             if (cfg.lyrics) {
                 globals.push({ key: "lyricsLines", label: "Lines: " + cfg.lyricsLines, on: false });
@@ -200,6 +206,7 @@ ShellRoot {
             lyricsLines: [3, 1],
             lyricsSize: ["medium", "large", "small"],
             foilStyle: ["rainbow", "gold", "silver", "art"],
+            sleeveColor: ["art", "palette"],
             layer: ["overlay", "top", "bottom"]
         })
 
@@ -235,7 +242,7 @@ ShellRoot {
         // name when the skin has it.
         readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
                                             "holoColor", "holoMotion", "holoGlitch", "holoOpacity", "holoBase",
-                                            "foilStyle", "lightMotion", "lightTilt"]
+                                            "foilStyle", "lightMotion", "lightTilt", "sleeveColor"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
                 if (item[key] !== undefined)
@@ -300,7 +307,16 @@ ShellRoot {
             "neon": neonSkin,
             "neondisc": neonDiscSkin,
             "matrix": matrixSkin,
-            "terminal": terminalSkin
+            "terminal": terminalSkin,
+            "session": sessionSkin,
+            "sleeve": sleeveSkin,
+            "deco": decoSkin,
+            "gallery": gallerySkin,
+            "ticket": ticketSkin,
+            "magazine": magazineSkin,
+            "stamp": stampSkin,
+            "episode": episodeSkin,
+            "phantom": phantomSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -569,13 +585,16 @@ ShellRoot {
 
         Lyrics { id: lyrics; player: source; enabled: cfg.lyrics }
 
-        // The music's own levels for the progress wave, while it's playing
-        // and the wave is on screen: the ring, or the bar in the open
-        // controls.
+        // The music's own levels, while it's playing and something is
+        // using them: the progress wave on screen (the ring, or the bar in
+        // the open controls), or a skin pulsing with the beat.
+        readonly property bool skinHears:
+            skinLoader.item ? skinLoader.item.audioLevel !== undefined : false
         AudioLevels {
             id: audio
-            active: cfg.audioWave && source.playing && !win.collapsed && !win.flipped
-                && (win.ringStyle ? source.duration > 0 : controls.shown)
+            active: source.playing && !win.collapsed && !win.flipped
+                && ((cfg.audioWave && (win.ringStyle ? source.duration > 0 : controls.shown))
+                    || (cfg.audioReact && win.skinHears))
         }
 
         LyricsWindow {
@@ -799,6 +818,8 @@ ShellRoot {
                                     item.peekSide = Qt.binding(() => cfg.peekSide);
                                 if (item.progress !== undefined)
                                     item.progress = Qt.binding(() => source.progress);
+                                if (item.duration !== undefined)
+                                    item.duration = Qt.binding(() => source.duration);
                                 if (item.accent !== undefined)
                                     item.accent = Qt.binding(() => accent.accent);
                                 if (item.shellOpacity !== undefined)
@@ -809,6 +830,8 @@ ShellRoot {
                                     item.title = Qt.binding(() => source.title);
                                 if (item.artist !== undefined)
                                     item.artist = Qt.binding(() => source.artist);
+                                if (item.audioLevel !== undefined)
+                                    item.audioLevel = Qt.binding(() => cfg.audioReact ? audio.bass : 0);
                                 if (item.previousArt !== undefined) {
                                     item.previousArt = Qt.binding(() => source.previousArtUrl);
                                     item.previousTitle = Qt.binding(() => source.previousTitle);
@@ -1008,6 +1031,15 @@ ShellRoot {
         Component { id: neonDiscSkin; NeonDiscSkin {} }
         Component { id: matrixSkin; MatrixSkin {} }
         Component { id: terminalSkin; TerminalSkin {} }
+        Component { id: sessionSkin; SessionSkin {} }
+        Component { id: sleeveSkin; SleeveSkin {} }
+        Component { id: decoSkin; DecoSkin {} }
+        Component { id: gallerySkin; GallerySkin {} }
+        Component { id: ticketSkin; TicketSkin {} }
+        Component { id: magazineSkin; MagazineSkin {} }
+        Component { id: stampSkin; StampSkin {} }
+        Component { id: episodeSkin; EpisodeSkin {} }
+        Component { id: phantomSkin; PhantomSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -1278,6 +1310,10 @@ ShellRoot {
                 // The progress wave following the music, read from cava
                 // (when it's installed); off, or without cava, a plain sine.
                 property bool audioWave: true
+                // The skins that pulse on their own (the neon ones, the HUD,
+                // the shard, the matrix) pulse with the music's low end
+                // instead. Also needs cava.
+                property bool audioReact: true
 
                 // Synced lyrics from lrclib.net under the widget, with the
                 // lines around the current one (3) or on its own (1).
@@ -1313,6 +1349,9 @@ ShellRoot {
                 property real holoOpacity: 1
                 property bool holoBase: true
                 property string foilStyle: "rainbow"
+                // Sleeve: its colour, "art" (the cover's), "palette" (one
+                // per track from a fixed set) or a "#rrggbb".
+                property string sleeveColor: "art"
                 property bool lightMotion: true
                 property bool lightTilt: true
 

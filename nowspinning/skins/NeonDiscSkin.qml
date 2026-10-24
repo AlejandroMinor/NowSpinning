@@ -25,6 +25,9 @@ Item {
     property real spinDegreesPerSecond: 20
     property bool lightMotion: true   // the halo breathing
     property bool lightTilt: true     // the sheen turning toward the pointer
+    // How loud the low end is right now, 0..1, while `audioReact` is on
+    // (AudioLevels.qml); 0 otherwise, and the skin keeps its own pulse.
+    property real audioLevel: 0
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -65,7 +68,9 @@ Item {
         NumberAnimation { to: 1; duration: 1400; easing.type: Easing.InOutSine }
         NumberAnimation { to: 0.6; duration: 1400; easing.type: Easing.InOutSine }
     }
-    readonly property real glow: blankLabel ? 0.2 : (light.following ? 1 : breath)
+    readonly property real glow: blankLabel ? 0.2
+        : light.following ? 1
+        : audioLevel > 0 ? 0.3 + 0.7 * audioLevel : breath
 
     Rectangle {
         anchors.centerIn: parent
