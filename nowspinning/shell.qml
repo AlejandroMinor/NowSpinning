@@ -104,12 +104,12 @@ ShellRoot {
         // the clear shell on the tapes.
         readonly property var skinOrder: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman",
                                           "single", "crt", "ascii", "pixel", "polaroid",
-                                          "hologram", "foil", "hud", "shard", "neon", "neondisc"]
+                                          "hologram", "foil", "hud", "shard", "neon", "neondisc", "matrix"]
         readonly property var skinNames: ({
             vinyl: "Vinyl", cd: "CD", disc: "Disc", cassette: "Tape", minidisc: "MD",
             walkman: "Walkman", crt: "CRT", ascii: "ASCII", pixel: "Pixel",
             polaroid: "Polaroid", single: "7\"", hologram: "Holo", foil: "Foil",
-            hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc"
+            hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc", matrix: "Matrix"
         })
 
         readonly property var settingsOptions: {
@@ -287,7 +287,8 @@ ShellRoot {
             "hud": hudSkin,
             "shard": shardSkin,
             "neon": neonSkin,
-            "neondisc": neonDiscSkin
+            "neondisc": neonDiscSkin,
+            "matrix": matrixSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -980,6 +981,7 @@ ShellRoot {
         Component { id: shardSkin; ShardSkin {} }
         Component { id: neonSkin; NeonSkin {} }
         Component { id: neonDiscSkin; NeonDiscSkin {} }
+        Component { id: matrixSkin; MatrixSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
