@@ -99,6 +99,7 @@ Lives at `~/.config/nowspinning/config.json`, reloaded live on save. See `config
 | `lightMotion` | `true` | The skin's light (a tilt, a glint, the foil) drifting on its own while playing. The discs don't have it: room light stays put |
 | `lightTilt` | `true` | The skin's light following the pointer: the flat skins and the tapes turn toward it, the discs' sheen turns with it, the glare slides across the glass |
 | `monitor` | `""` | Which output to appear on, by connector name (`hyprctl monitors`), e.g. `"eDP-1"`. Empty, or a name that isn't connected, means let the compositor pick. Applied live: the widget hides for a beat and comes back on the new output |
+| `layer` | `"overlay"` | wlroots layer-shell layer: `"overlay"` (above everything), `"top"` (above normal windows, below overlays and fullscreen), or `"bottom"` (behind every window but above the wallpaper, like a desktop widget). Applied live; the lyrics follow it. On `"bottom"` windows cover the widget and take the clicks over it |
 | `preferredPlayer` | `"org.mpris.MediaPlayer2.spotify"` | MPRIS bus name that wins when more than one player is running, even while paused. Empty string means no preference, so whichever player is actually playing wins instead |
 | `x`, `y` | `-1` | Saved position; `-1` means "use `anchor`". Overwritten automatically when dragged |
 

@@ -19,6 +19,9 @@ PanelWindow {
     property int lines: 3           // 1 or 3
     property real scale: 1          // follows the widget's size
     property bool shown: false
+    // Follows the widget's layer, so the lyrics stay with it instead of
+    // floating above windows the widget is behind.
+    property int shellLayer: WlrLayer.Overlay
 
     readonly property int lineHeight: Math.round(18 * scale)
     readonly property int gap: Math.round(8 * scale)
@@ -40,7 +43,7 @@ PanelWindow {
     visible: shown && lyrics && lyrics.status === "synced" && lyrics.index >= 0
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: lyricsWindow.shellLayer
     WlrLayershell.namespace: "nowspinning-lyrics"
     mask: Region {}
 

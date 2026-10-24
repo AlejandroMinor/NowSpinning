@@ -159,6 +159,7 @@ ShellRoot {
                 toggles.push({ key: "holoOpacity", label: "Alpha: " + Math.round(cfg.holoOpacity * 100) + "%", on: false });
                 toggles.push({ key: "holoBase", label: "Base", on: cfg.holoBase });
             }
+            toggles.push({ key: "layer", label: "Layer: " + cap(cfg.layer, "overlay"), on: false });
             toggles.push({ key: "tintFromArt", label: "Tint", on: cfg.tintFromArt });
             toggles.push({ key: "shadow", label: "Shadow", on: cfg.shadow });
             toggles.push({ key: "lyrics", label: "Lyrics", on: cfg.lyrics });
@@ -186,7 +187,8 @@ ShellRoot {
             holoOpacity: [1, 0.75, 0.5],
             lyricsLines: [3, 1],
             lyricsSize: ["medium", "large", "small"],
-            foilStyle: ["rainbow", "gold", "silver", "art"]
+            foilStyle: ["rainbow", "gold", "silver", "art"],
+            layer: ["overlay", "top", "bottom"]
         })
 
         function pickOption(section, key) {
@@ -551,6 +553,7 @@ ShellRoot {
 
         LyricsWindow {
             screen: win.screen
+            shellLayer: win.shellLayer
             lyrics: lyrics
             widget: Qt.rect(win.placedX + win.body.x, win.placedY + win.body.y,
                             win.body.width, win.body.height)
@@ -593,7 +596,15 @@ ShellRoot {
 
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.layer: WlrLayer.Overlay
+
+        // "bottom" is a desktop widget: behind every window, just above
+        // the wallpaper. "top" sits above normal windows but below
+        // overlays and fullscreen windows; "overlay" is above everything.
+        // Changing this is applied live, like the other layer properties.
+        readonly property int shellLayer: cfg.layer === "bottom" ? WlrLayer.Bottom
+            : cfg.layer === "top" ? WlrLayer.Top
+            : WlrLayer.Overlay
+        WlrLayershell.layer: win.shellLayer
         WlrLayershell.namespace: "nowspinning"
 
         // Clicks only count where something actually is: the disc while
@@ -1273,6 +1284,12 @@ ShellRoot {
                 // Which output to appear on, by connector name (see
                 // `hyprctl monitors`). Empty = let the compositor pick.
                 property string monitor: ""
+
+                // wlroots layer to sit in: "overlay" (above everything),
+                // "top" (above normal windows, below overlays and
+                // fullscreen), or "bottom" (behind every window, just above
+                // the wallpaper). Anything else falls back to overlay.
+                property string layer: "overlay"
 
                 // Where it starts when there's no saved x/y: "top-left",
                 // "top", "top-right", "left", "center", "right",
