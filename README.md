@@ -147,3 +147,7 @@ Developed and tested only on Hyprland, on Arch. Only one thing calls Hyprland sp
 ## Credits
 
 - The Polaroid skin writes the title in [Permanent Marker](https://fonts.google.com/specimen/Permanent+Marker) by Font Diner, under the Apache License 2.0; see `nowspinning/fonts/PermanentMarker-LICENSE.txt`.
+
+## License
+
+GPL-3.0-or-later; see `LICENSE`. The bundled Permanent Marker font keeps its own license, above.
