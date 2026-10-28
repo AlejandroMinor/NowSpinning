@@ -10,7 +10,7 @@ depends=('quickshell' 'qt6-declarative' 'qt6-5compat')
 optdepends=('cava: audio wave and skins that pulse with the music')
 conflicts=('nowspinning-git')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('454e0abf717a1898df0482aff606aea91d1fee9ecd009777fda6cdfef927ca8e')
 
 package() {
   cd "NowSpinning-$pkgver"
