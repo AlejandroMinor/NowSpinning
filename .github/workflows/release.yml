@@ -31,7 +31,8 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
-          ref: ${{ env.TAG }}
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
 
       # The tag's PKGBUILD predates its own checksum, so pin the version
       # to the tag and compute the checksum here.
