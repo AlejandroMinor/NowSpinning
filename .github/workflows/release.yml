@@ -27,9 +27,9 @@ jobs:
       TAG: ${{ inputs.tag || github.event.release.tag_name }}
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed git github-cli
+        run: pacman -Syu --noconfirm --needed git github-cli pacman-contrib
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
 
@@ -44,7 +44,7 @@ jobs:
           sudo -u builder updpkgsums
           sudo -u builder makepkg --nodeps
 
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: packaging/arch/*.pkg.tar.zst
 
