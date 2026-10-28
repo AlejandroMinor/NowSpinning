@@ -22,13 +22,13 @@ Just for fun, really. This is for anyone who likes seeing the cover art of whate
 
 Whichever way you install it, you get the same `nowspinning` command: a toggle that starts the widget if it isn't running and kills it if it is, for a terminal or a Hyprland keybind, plus a desktop entry so it shows up by name and icon in your application menu and in launchers like rofi or wofi.
 
-### From the AUR
+### As an Arch package
 
 ```sh
-yay -S nowspinning-git
+git clone https://github.com/AlejandroMinor/NowSpinning && cd NowSpinning/packaging/arch && makepkg -si
 ```
 
-`cava` is an optional dependency; install it too for the audio wave.
+That builds the latest release and installs it with pacman, so `sudo pacman -R nowspinning` takes it out again. `cava` is an optional dependency; install it too for the audio wave.
 
 ### From source
 

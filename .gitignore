@@ -53,3 +53,7 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# makepkg output in packaging/arch
+packaging/arch/*
+!packaging/arch/PKGBUILD

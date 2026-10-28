@@ -1,0 +1,18 @@
+# Maintainer: Alejandro Minor <https://github.com/AlejandroMinor>
+pkgname=nowspinning
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Floating MPRIS widget for Hyprland with spinning physical-media skins, built on Quickshell"
+arch=('any')
+url="https://github.com/AlejandroMinor/NowSpinning"
+license=('GPL-3.0-or-later' 'Apache-2.0')
+depends=('quickshell' 'qt6-declarative' 'qt6-5compat')
+optdepends=('cava: audio wave and skins that pulse with the music')
+conflicts=('nowspinning-git')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "NowSpinning-$pkgver"
+  make DESTDIR="$pkgdir" PREFIX=/usr install
+}
