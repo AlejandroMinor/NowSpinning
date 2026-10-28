@@ -7,7 +7,7 @@
 // the skin's job (see skins/VinylSkin.qml for the contract), and the data
 // comes from MprisSource.qml.
 //
-// Runs as its own instance:  qs -p ~/.config/quickshell/nowspinning
+// Runs as its own instance:  qs -p <this directory>, or the nowspinning script
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io

@@ -20,33 +20,49 @@ Just for fun, really. This is for anyone who likes seeing the cover art of whate
 
 ## Install
 
+Whichever way you install it, you get the same `nowspinning` command: a toggle that starts the widget if it isn't running and kills it if it is, for a terminal or a Hyprland keybind, plus a desktop entry so it shows up by name and icon in your application menu and in launchers like rofi or wofi.
+
+### From the AUR
+
+```sh
+yay -S nowspinning-git
+```
+
+`cava` is an optional dependency; install it too for the audio wave.
+
+### From source
+
 ```sh
 sudo pacman -S --needed quickshell qt6-5compat cava
 ```
 
-That's Arch; see quickshell.org for other distros.
+That's Arch; see quickshell.org for other distros. Then clone this repo and, from inside it, either install a copy or link to the clone.
 
-Clone this repo, then symlink it into Quickshell's config directory:
-
-```sh
-mkdir -p ~/.config/quickshell && ln -sfn "$(pwd)/nowspinning" ~/.config/quickshell/nowspinning && ls -l ~/.config/quickshell/nowspinning
-```
-
-That last `ls` should print the link pointing back into this repo.
-
-Run it:
+**Install a copy:**
 
 ```sh
-qs -p ~/.config/quickshell/nowspinning
+sudo make install
 ```
 
-Or symlink the bundled toggle script, which starts the widget if it isn't running and kills it if it is, the same command either way. The first link makes `nowspinning` a command on your PATH, for a terminal or a Hyprland keybind. The second one is optional: it adds a desktop entry, so NowSpinning also shows up by name and icon in your application menu and in launchers like rofi or wofi.
+That goes under `/usr/local`. For your home directory instead, without `sudo`, use `make install PREFIX=~/.local`, with `~/.local/bin` on your PATH. The clone isn't needed afterwards; to update, `git pull` and `make install` again. `make uninstall`, with the same `PREFIX`, takes it all out.
+
+**Or link to the clone**, which keeps the widget running straight out of the repo: a `git pull`, or an edit of your own, shows up without reinstalling, but the clone has to stay where it is. The toggle script finds the widget next to itself, back in the repo. The second link, the desktop entry, is optional.
 
 ```sh
 mkdir -p ~/.local/bin && ln -sfn "$(pwd)/bin/nowspinning" ~/.local/bin/nowspinning
 mkdir -p ~/.local/share/applications && ln -sfn "$(pwd)/desktop/nowspinning.desktop" ~/.local/share/applications/nowspinning.desktop
 nowspinning
 ```
+
+Or run it without the script: `qs -p ./nowspinning`. Set `NOWSPINNING_DIR` to point the `nowspinning` command at another copy of the widget.
+
+To undo it, remove the two links; the clone itself is untouched, delete it too if you no longer want it:
+
+```sh
+rm ~/.local/bin/nowspinning ~/.local/share/applications/nowspinning.desktop
+```
+
+### Autostart
 
 To start it with your session, add a line to your existing `hl.on("hyprland.start", ...)` block in your Lua config, the same way you'd autostart any other program:
 

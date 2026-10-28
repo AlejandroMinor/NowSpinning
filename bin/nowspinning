@@ -3,8 +3,20 @@
 #
 # `qs kill -p` returns non-zero when nothing was running, so the same
 # command works in both directions.
+#
+# The shell is found next to this script, after resolving symlinks: in a
+# clone it's ../nowspinning, once installed it's ../share/nowspinning
+# under the same prefix. NOWSPINNING_DIR overrides both.
 
-CONFIG="$HOME/.config/quickshell/nowspinning"
+HERE="$(dirname "$(readlink -f "$0")")"
+
+if [ -n "$NOWSPINNING_DIR" ]; then
+    CONFIG="$NOWSPINNING_DIR"
+elif [ -f "$HERE/../nowspinning/shell.qml" ]; then
+    CONFIG="$(readlink -f "$HERE/../nowspinning")"
+else
+    CONFIG="$(readlink -f "$HERE/../share/nowspinning")"
+fi
 
 if qs kill -p "$CONFIG" >/dev/null 2>&1; then
     exit 0
