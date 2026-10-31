@@ -67,8 +67,10 @@ Item {
         id: cover
         source: skin.blankLabel ? "" : skin.artUrl
         columns: 48
-        rows: Math.round(48 * skin.gh / skin.gw)
-        onSampled: skin.cut()
+        // The glass is always the same shape (h is w * 1.32, less the
+        // frame): a fixed grid, or a size settling would resample it.
+        rows: 66
+        onSampled: skin.recut()
     }
 
     function hash(s) {
@@ -94,7 +96,13 @@ Item {
     // it's flat (a sky), the way a glazier would cut it. Worked out once per
     // cover.
     property var pieces: []
+    // A new cover and a new size often come together: cut once for both.
+    function recut() {
+        Qt.callLater(cut);
+    }
     function cut() {
+        if (gw <= 0 || gh <= 0)
+            return;
         const px = cover.pixels, n = cover.columns, m = cover.rows;
         const has = px.length === n * m * 3;
         const lum = i => (0.299 * px[i * 3] + 0.587 * px[i * 3 + 1] + 0.114 * px[i * 3 + 2]) / 255;
@@ -108,29 +116,50 @@ Item {
             return Math.min(1, Math.hypot(gx, gy) * 3);
         };
 
-        const cols = 21, rows = Math.round(cols * gh / gw);
+        const cols = 21, rows = 29;
         const cw = gw / cols, ch = gh / rows;
         let s = hash(artUrl) || 1;
         const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
-        const seeds = [];
+        // One point at most per cell of a grid, so a piece only needs the
+        // points in the cells around its own to be cut.
+        const seeds = [], grid = new Array(cols * rows).fill(null);
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const x = (c + 0.15 + 0.7 * rand()) * cw, y = (r + 0.15 + 0.7 * rand()) * ch;
                 const keep = 0.4 + 0.6 * edge(Math.floor(x / gw * n), Math.floor(y / gh * m));
-                if (rand() < keep)
-                    seeds.push({ x: x, y: y });
+                if (rand() < keep) {
+                    const seed = { x: x, y: y, r: r, c: c };
+                    seeds.push(seed);
+                    grid[r * cols + c] = seed;
+                }
             }
         }
+        const cell = Math.min(cw, ch);
 
         const out = [];
         for (const a of seeds) {
             let poly = [[0, 0], [gw, 0], [gw, gh], [0, gh]];
             let far = Math.hypot(gw, gh);
-            for (const b of seeds) {
-                // Farther than twice the piece's farthest corner, b can't
-                // cut it.
+            // The cells around a's, ring by ring, the nearest first: once a
+            // ring is farther than twice the piece's farthest corner, nothing
+            // beyond it can cut the piece.
+            const near = [];
+            for (let k = 1; k < Math.max(cols, rows); k++) {
+                if ((k - 1) * cell > 2 * far)
+                    break;
+                near.length = 0;
+                for (let r = a.r - k; r <= a.r + k; r++) {
+                    if (r < 0 || r >= rows)
+                        continue;
+                    const edgeRow = r === a.r - k || r === a.r + k;
+                    for (let c = a.c - k; c <= a.c + k; c += edgeRow ? 1 : 2 * k) {
+                        if (c >= 0 && c < cols && grid[r * cols + c])
+                            near.push(grid[r * cols + c]);
+                    }
+                }
+            for (const b of near) {
                 const d = Math.hypot(b.x - a.x, b.y - a.y);
-                if (a === b || d > 2 * far)
+                if (d > 2 * far)
                     continue;
                 // Keep the side of the line halfway between them nearer a.
                 const nx = b.x - a.x, ny = b.y - a.y;
@@ -153,6 +182,9 @@ Item {
                 far = 0;
                 for (const p of poly)
                     far = Math.max(far, Math.hypot(p[0] - a.x, p[1] - a.y));
+            }
+                if (poly.length < 3)
+                    break;
             }
             if (poly.length < 3)
                 continue;
@@ -381,5 +413,5 @@ Item {
     }
 
     onBlankLabelChanged: glass.requestPaint()
-    onGwChanged: cut()
+    onGwChanged: recut()
 }

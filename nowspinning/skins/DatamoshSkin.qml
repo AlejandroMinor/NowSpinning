@@ -312,6 +312,10 @@ Item {
 
         Canvas {
             id: picture
+            // One frame's worth of pixels, kept: a new one each frame is
+            // 36k values of garbage 25 times a second, and the collector
+            // chasing it costs far more than the drawing.
+            property var img: null
             width: skin.n
             height: skin.n
             scale: skin.side / skin.n
@@ -324,7 +328,8 @@ Item {
                     ctx.fillRect(0, 0, width, height);
                     return;
                 }
-                const img = ctx.createImageData(width, height);
+                if (!img)
+                    img = ctx.createImageData(width, height);
                 const d = img.data;
                 for (let i = 0, j = 0; i < cur.length; i += 3, j += 4) {
                     d[j] = cur[i];
