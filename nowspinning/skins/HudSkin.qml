@@ -284,14 +284,16 @@ Item {
             visible: !skin.blankLabel
             spacing: Math.max(1, skin.u * 0.012)
             readonly property int count: 18
+            // How many are lit: the segments only hear about it when one
+            // more lights up, not on every tick of progress.
+            readonly property int lit: Math.round(skin.progress * count)
             Repeater {
                 model: bar.count
                 Rectangle {
                     required property int index
                     width: (screen.width - (bar.count - 1) * bar.spacing) / bar.count
                     height: Math.max(3, skin.u * 0.035)
-                    color: index < Math.round(skin.progress * bar.count)
-                        ? skin.yellow : Qt.rgba(1, 1, 1, 0.12)
+                    color: index < bar.lit ? skin.yellow : Qt.rgba(1, 1, 1, 0.12)
                 }
             }
         }

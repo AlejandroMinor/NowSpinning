@@ -138,8 +138,11 @@ Item {
             id: arm
             visible: skin.showArm
             discSize: skin.size
-            down: skin.playing
-            progress: skin.progress
+            // Hidden, it follows nothing: its glides would run every frame
+            // for no one. Shown again, it drops onto the record and glides
+            // to the track, as on play.
+            down: skin.playing && visible
+            progress: visible ? skin.progress : 0
             // The grooves stop at the label's edge, which sits much further
             // out than on an LP.
             innerRadius: 0.60

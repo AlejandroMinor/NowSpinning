@@ -96,21 +96,27 @@ Item {
         height: skin.size
         rotation: spin.angle
 
-        // Grooves, every third one cyan.
-        Repeater {
-            model: 14
-            Rectangle {
-                required property int index
-                readonly property real d: skin.size * (0.93 - index * 0.04)
-                anchors.centerIn: parent
-                width: d
-                height: d
-                radius: d / 2
-                color: "transparent"
-                border {
-                    width: 1
-                    color: index % 3 === 0 ? Qt.rgba(0, 0.94, 1, 0.3 + 0.3 * skin.glow)
-                                           : Qt.rgba(1, 0.16, 0.43, 0.12 + 0.12 * skin.glow)
+        // Grooves, every third one cyan. Both colours brighten by the same
+        // factor with the glow, so the group's opacity carries it and the
+        // grooves themselves never change: 14 rings rebuilt every frame
+        // otherwise. They don't overlap, so it looks exactly the same.
+        Item {
+            anchors.fill: parent
+            opacity: 0.5 + 0.5 * skin.glow
+            Repeater {
+                model: 14
+                Rectangle {
+                    required property int index
+                    readonly property real d: skin.size * (0.93 - index * 0.04)
+                    anchors.centerIn: parent
+                    width: d
+                    height: d
+                    radius: d / 2
+                    color: "transparent"
+                    border {
+                        width: 1
+                        color: index % 3 === 0 ? Qt.rgba(0, 0.94, 1, 0.6) : Qt.rgba(1, 0.16, 0.43, 0.24)
+                    }
                 }
             }
         }

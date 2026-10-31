@@ -982,7 +982,7 @@ ShellRoot {
                     preview: win.ringPreview
                     color: win.accentStroke
                     waves: 14
-                    levels: audio.levels
+                    levels: visible ? audio.levels : []
 
                     // The wave travels while playing and flattens on pause.
                     // When the style is "bar" this isn't even drawn, so
@@ -1013,7 +1013,8 @@ ShellRoot {
                     source: source
                     shown: win.controlsOpen && !win.collapsed && !win.flipped
                     showProgress: !win.ringStyle
-                    levels: audio.levels
+                    // Closed, the bar isn't drawn: no levels to pass along.
+                    levels: shown && showProgress ? audio.levels : []
                 }
             }
         }
