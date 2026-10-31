@@ -29,36 +29,49 @@ Canvas {
     // enough.
     property string sampledFrom: ""
 
-    // The cover this Canvas holds. A Canvas keeps every image it loads
+    // Every cover this Canvas asked for. A Canvas keeps each image it loads
     // until told to drop it: a cover per track, at full size, for as long
-    // as the widget runs. Only the current one is kept.
-    property string held: ""
-    function hold(url) {
-        if (held !== "" && held !== url)
-            unloadImage(held);
-        held = url;
+    // as the widget runs. But one still on its way must never be dropped:
+    // that cancels its download half-sent, and Qt's connection doesn't
+    // always recover, so later covers stop arriving. Old ones go only once
+    // they've loaded, whenever a load finishes.
+    property var asked: []
+    function tidy() {
+        const keep = [];
+        for (const url of asked) {
+            if (url === source || !isImageLoaded(url))
+                keep.push(url);
+            else
+                unloadImage(url);
+        }
+        asked = keep;
     }
 
     function load() {
         sampledFrom = "";
-        hold(source);
         if (!source) {
             pixels = [];
             sampled();
         } else {
             // One already loaded (by this Canvas, or cached from another)
             // may never say so.
+            if (asked.indexOf(source) < 0)
+                asked = asked.concat([source]);
             if (!isImageLoaded(source))
                 loadImage(source);
             if (isImageLoaded(source))
                 requestPaint();
         }
+        tidy();
     }
     onSourceChanged: load()
     onColumnsChanged: load()
     onRowsChanged: load()
     Component.onCompleted: load()
-    onImageLoaded: requestPaint()
+    onImageLoaded: {
+        tidy();
+        requestPaint();
+    }
 
     onPaint: {
         // A cover that loaded after the source moved on isn't ours.

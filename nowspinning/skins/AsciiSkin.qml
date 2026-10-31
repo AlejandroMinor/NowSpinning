@@ -63,7 +63,10 @@ Item {
         width: skin.columns
         height: skin.rows
         opacity: 0
-        onImageLoaded: requestPaint()
+        onImageLoaded: {
+            skin.tidy();
+            requestPaint();
+        }
         onPaint: {
             if (!skin.artUrl || !isImageLoaded(skin.artUrl))
                 return;
@@ -85,19 +88,31 @@ Item {
         }
     }
 
-    // The cover the sampler holds: a Canvas keeps every image it loads until
-    // told to drop it, so only the current one is kept.
-    property string held: ""
+    // Every cover the sampler asked for: a Canvas keeps each image it loads
+    // until told to drop it. One still on its way is never dropped (that
+    // cancels its download and can stall the ones after it); old ones go
+    // once they've loaded.
+    property var asked: []
+    function tidy() {
+        const keep = [];
+        for (const url of asked) {
+            if (url === artUrl || !sampler.isImageLoaded(url))
+                keep.push(url);
+            else
+                sampler.unloadImage(url);
+        }
+        asked = keep;
+    }
     function load() {
-        if (held !== "" && held !== artUrl)
-            sampler.unloadImage(held);
-        held = artUrl;
         if (!artUrl)
             return;
+        if (asked.indexOf(artUrl) < 0)
+            asked = asked.concat([artUrl]);
         if (sampler.isImageLoaded(artUrl))
             sampler.requestPaint();
         else
             sampler.loadImage(artUrl);
+        tidy();
     }
     onArtUrlChanged: load()
     onColumnsChanged: load()
