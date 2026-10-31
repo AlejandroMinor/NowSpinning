@@ -103,13 +103,14 @@ ShellRoot {
         // something: the arm and deck on the vinyl, the ring on round faces,
         // the clear shell on the tapes.
         // Grouped in the settings card, one group at a time, so it isn't a
-        // wall of 28 live previews.
+        // wall of 34 live previews.
         readonly property var skinGroups: [
             { key: "physical", label: "Physical",
               skins: ["vinyl", "cd", "disc", "cassette", "minidisc", "walkman", "single"] },
-            { key: "flat", label: "Flat", skins: ["crt", "ascii", "pixel", "polaroid", "hologram", "foil"] },
-            { key: "cyber", label: "Cyber", skins: ["hud", "shard", "neon", "neondisc", "matrix", "terminal"] },
-            { key: "print", label: "Print", skins: ["sleeve", "deco", "gallery", "ticket", "magazine", "stamp"] },
+            { key: "flat", label: "Flat", skins: ["crt", "ascii", "pixel", "polaroid", "hologram", "foil",
+                                                  "riso", "lcd", "stainedglass", "blueprint"] },
+            { key: "cyber", label: "Cyber", skins: ["hud", "shard", "neon", "neondisc", "matrix", "terminal", "datamosh"] },
+            { key: "print", label: "Print", skins: ["sleeve", "deco", "gallery", "ticket", "magazine", "stamp", "poster"] },
             { key: "anime", label: "Anime", skins: ["session", "episode", "phantom"] }
         ]
         readonly property var skinOrder: skinGroups.reduce((all, g) => all.concat(g.skins), [])
@@ -120,7 +121,8 @@ ShellRoot {
             hud: "HUD", shard: "Shard", neon: "Neon", neondisc: "Neon disc", matrix: "Matrix",
             terminal: "Terminal", session: "Session", sleeve: "Sleeve", deco: "Deco",
             gallery: "Gallery", ticket: "Ticket", magazine: "Magazine", stamp: "Stamp",
-            episode: "Episode", phantom: "Phantom"
+            episode: "Episode", phantom: "Phantom", riso: "Riso", lcd: "LCD", stainedglass: "Glass",
+            blueprint: "Blueprint", datamosh: "Mosh", poster: "Poster"
         })
 
         readonly property var settingsOptions: {
@@ -153,8 +155,15 @@ ShellRoot {
                 toggles.push({ key: "showBezel", label: "Bezel", on: cfg.showBezel });
                 toggles.push({ key: "effect", label: "Glitch: " + cap(cfg.effect, "random"), on: false });
             }
-            if (skinName === "polaroid")
+            if (skinName === "polaroid") {
                 toggles.push({ key: "showStack", label: "Stack", on: cfg.showStack });
+                if (cfg.showStack)
+                    toggles.push({ key: "stackDepth", label: "Pile: " + cfg.stackDepth, on: false });
+            }
+            if (skinName === "riso")
+                toggles.push({ key: "risoInks", label: "Inks: " + cfg.risoInks, on: false });
+            if (skinName === "lcd")
+                toggles.push({ key: "lcdColor", label: "Color: " + cap(cfg.lcdColor, "green"), on: false });
             if (skinName === "foil")
                 toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
             if (skinName === "sleeve")
@@ -216,6 +225,9 @@ ShellRoot {
             lyricsSize: ["medium", "large", "small"],
             foilStyle: ["rainbow", "gold", "silver", "art"],
             sleeveColor: ["art", "palette"],
+            stackDepth: [3, 1],
+            risoInks: [3, 2],
+            lcdColor: ["green", "gray", "amber"],
             layer: ["overlay", "top", "bottom"]
         })
 
@@ -251,7 +263,8 @@ ShellRoot {
         // name when the skin has it.
         readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
                                             "holoColor", "holoMotion", "holoGlitch", "holoOpacity", "holoBase",
-                                            "foilStyle", "lightMotion", "lightTilt", "sleeveColor"]
+                                            "foilStyle", "lightMotion", "lightTilt", "sleeveColor",
+                                            "stackDepth", "risoInks", "lcdColor"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
                 if (item[key] !== undefined)
@@ -325,7 +338,13 @@ ShellRoot {
             "magazine": magazineSkin,
             "stamp": stampSkin,
             "episode": episodeSkin,
-            "phantom": phantomSkin
+            "phantom": phantomSkin,
+            "riso": risoSkin,
+            "lcd": lcdSkin,
+            "stainedglass": stainedGlassSkin,
+            "blueprint": blueprintSkin,
+            "datamosh": datamoshSkin,
+            "poster": posterSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -1049,6 +1068,12 @@ ShellRoot {
         Component { id: stampSkin; StampSkin {} }
         Component { id: episodeSkin; EpisodeSkin {} }
         Component { id: phantomSkin; PhantomSkin {} }
+        Component { id: risoSkin; RisoSkin {} }
+        Component { id: lcdSkin; LcdSkin {} }
+        Component { id: stainedGlassSkin; StainedGlassSkin {} }
+        Component { id: blueprintSkin; BlueprintSkin {} }
+        Component { id: datamoshSkin; DatamoshSkin {} }
+        Component { id: posterSkin; PosterSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -1340,7 +1365,9 @@ ShellRoot {
                 // ASCII: columns (32, 48, 64), in the cover's colours or
                 // white. CRT: its bezel, and the glitch ("random", "slices",
                 // "roll", "static", "split", "channel"). Polaroid: the last
-                // track's photo left underneath. Hologram: its colour ("cyan",
+                // tracks' photos left underneath, 3 fanned out or 1. Riso:
+                // its inks, 3 or 2. LCD: its shades ("green", "gray",
+                // "amber"). Hologram: its colour ("cyan",
                 // "green", "pink", "amber", "art"), motion, dropouts and
                 // how solid it is (1, 0.75, 0.5).
                 // Foil: its finish ("rainbow", "gold", "silver", "art").
@@ -1352,6 +1379,9 @@ ShellRoot {
                 property bool showBezel: true
                 property string effect: "random"
                 property bool showStack: true
+                property int stackDepth: 3
+                property int risoInks: 3
+                property string lcdColor: "green"
                 property string holoColor: "cyan"
                 property bool holoMotion: true
                 property bool holoGlitch: true

@@ -1,5 +1,7 @@
 // Skin: the cover as a Polaroid, the title written under it in marker. A new
-// track drops a new photo on top of the last one, tilted the other way.
+// track drops a new photo on top of the last one, tilted the other way, and
+// the pile keeps the last few tracks' photos, each where it fell: what's
+// been playing, at a glance.
 //
 // Ported from HyprFlow's media panel skins. The back, for the track info,
 // is the photo turned over: blank, dark enough for the white text.
@@ -8,8 +10,9 @@
 // pointer, with a glare sliding across its glossy print. The one under it
 // stays flat on the table.
 //
-// Options: lightMotion (the sway on its own) and lightTilt (turning toward
-// the pointer).
+// Options: showStack (the pile under the photo), stackDepth (how many
+// photos it keeps, 3 or 1), lightMotion (the sway on its own) and
+// lightTilt (turning toward the pointer).
 //
 // See VinylSkin.qml for the skin contract. On top of the usual subset, this
 // one reads the optional `title`.
@@ -25,7 +28,8 @@ Item {
     property bool playing: false
     property string title: ""
     property bool blankLabel: false
-    property bool showStack: true  // the last photo peeking out underneath
+    property bool showStack: true  // the last photos peeking out underneath
+    property int stackDepth: 3     // how many of them
     // The last track's cover and title, from whoever outlives the skin: a
     // skin made again (a panel reopened) starts its stack with them.
     property string previousArt: ""
@@ -41,8 +45,14 @@ Item {
     readonly property real frameHeight: pad + photo + frameWidth * 0.24
     property real tilt: 3
 
-    implicitWidth: size
-    implicitHeight: Math.round(frameHeight * 1.12)
+    // With more than one photo in the pile they fan out behind the front
+    // one, up and to the sides, far enough to make out each cover: the box
+    // grows for them, and the front photo sits a little low in it.
+    readonly property bool fanned: showStack && stackDepth > 1
+    readonly property real lowered: fanned ? size * 0.06 : 0
+
+    implicitWidth: Math.round(size * (fanned ? 1.32 : 1))
+    implicitHeight: Math.round(frameHeight * (fanned ? 1.3 : 1.12))
 
     readonly property bool supportsFullArt: false
     property bool artFull: false
@@ -50,7 +60,7 @@ Item {
     // The front photo, untilted. Close enough for the hit area and the
     // overlay; the few degrees of tilt stay inside the box.
     readonly property rect faceRect: Qt.rect((width - frameWidth) / 2,
-                                             (height - frameHeight) / 2,
+                                             (height - frameHeight) / 2 + lowered,
                                              frameWidth, frameHeight)
     readonly property bool faceIsCircle: false
     // The photos draw their own.
@@ -67,16 +77,29 @@ Item {
         area: skin.faceRect
     }
 
+    // The photos under the front one, the last track's first. Each keeps
+    // where it fell: one photo alone peeks out a little more turned than it
+    // was on top; fanned, each takes the next of three places (right, left,
+    // top) and stays there as others land, the one leaving the pile freeing
+    // its place for the next.
+    property var pile: []
+    readonly property int pileMax: 3
+    property int dropped: 0
+    readonly property var fan: [{ dx: 0.17, dy: -0.05, rotation: 8 },
+                                { dx: -0.17, dy: -0.03, rotation: -9 },
+                                { dx: 0.01, dy: -0.13, rotation: 3 }]
+    function lay(art, caption) {
+        pile = [{ art: art, caption: caption, rotation: front.rotation * 1.6, place: dropped % fan.length }]
+            .concat(pile.slice(0, pileMax - 1));
+        dropped += 1;
+    }
     function drop() {
         // The title can change before the cover, so the caption comes from
         // previousTitle when there is one.
-        if (front.art) {
-            back.art = front.art;
-            back.caption = previousTitle || front.caption;
-        } else if (previousArt) {
-            back.art = previousArt;
-            back.caption = previousTitle;
-        }
+        if (front.art)
+            lay(front.art, previousTitle || front.caption);
+        else if (previousArt)
+            lay(previousArt, previousTitle);
         tilt = -tilt;
         front.art = artUrl;
         dropIn.restart();
@@ -85,10 +108,8 @@ Item {
     // Handed over after the cover (the order bindings land in isn't ours to
     // pick): an empty stack still takes it.
     onPreviousArtChanged: {
-        if (!back.art && previousArt && previousArt !== front.art) {
-            back.art = previousArt;
-            back.caption = previousTitle;
-        }
+        if (pile.length === 0 && previousArt && previousArt !== front.art)
+            lay(previousArt, previousTitle);
     }
 
     component Photo: Item {
@@ -98,7 +119,7 @@ Item {
         width: skin.frameWidth
         height: skin.frameHeight
         x: (skin.width - width) / 2
-        y: (skin.height - height) / 2
+        y: (skin.height - height) / 2 + skin.lowered
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
@@ -153,11 +174,24 @@ Item {
         }
     }
 
+    // Deepest first, so the last track's lands on top of the pile.
+    Repeater {
+        model: skin.showStack ? skin.pile.slice(0, Math.max(1, skin.stackDepth)).reverse() : []
+        Photo {
+            required property var modelData
+            readonly property var place: skin.fanned ? skin.fan[modelData.place]
+                : { dx: 0, dy: 0, rotation: modelData.rotation }
+            art: modelData.art
+            caption: modelData.caption
+            rotation: place.rotation
+            x: (skin.width - width) / 2 + place.dx * skin.frameWidth
+            y: (skin.height - height) / 2 + skin.lowered + place.dy * skin.frameWidth
+        }
+    }
+    // On the back there's no cover to stack, but the pile is still there,
+    // turned over with the rest.
     Photo {
-        id: back
-        // On the back there's no cover to stack, but the pile is still
-        // there, turned over with the rest.
-        visible: skin.showStack && (art !== "" || skin.blankLabel)
+        visible: skin.showStack && skin.blankLabel
         rotation: -skin.tilt * 1.6
     }
     Photo {
@@ -175,7 +209,7 @@ Item {
 
     ParallelAnimation {
         id: dropIn
-        NumberAnimation { target: front; property: "y"; from: (skin.height - front.height) / 2 - skin.size * 0.3; to: (skin.height - front.height) / 2; duration: 460; easing.type: Easing.OutBack }
+        NumberAnimation { target: front; property: "y"; from: (skin.height - front.height) / 2 + skin.lowered - skin.size * 0.3; to: (skin.height - front.height) / 2 + skin.lowered; duration: 460; easing.type: Easing.OutBack }
         NumberAnimation { target: front; property: "opacity"; from: 0; to: 1; duration: 200 }
         NumberAnimation { target: front; property: "rotation"; from: skin.tilt * 4; to: skin.tilt; duration: 460; easing.type: Easing.OutCubic }
     }
