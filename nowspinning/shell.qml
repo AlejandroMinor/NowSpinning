@@ -110,7 +110,7 @@ ShellRoot {
             { key: "flat", label: "Flat", skins: ["crt", "ascii", "pixel", "polaroid", "hologram", "foil",
                                                   "riso", "lcd", "stainedglass", "blueprint"] },
             { key: "cyber", label: "Cyber", skins: ["hud", "shard", "neon", "neondisc", "matrix", "terminal", "datamosh"] },
-            { key: "print", label: "Print", skins: ["sleeve", "deco", "gallery", "ticket", "magazine", "stamp", "poster"] },
+            { key: "print", label: "Print", skins: ["sleeve", "deco", "gallery", "ticket", "magazine", "stamp", "poster", "cards"] },
             { key: "anime", label: "Anime", skins: ["session", "episode", "phantom"] }
         ]
         readonly property var skinOrder: skinGroups.reduce((all, g) => all.concat(g.skins), [])
@@ -122,7 +122,7 @@ ShellRoot {
             terminal: "Terminal", session: "Session", sleeve: "Sleeve", deco: "Deco",
             gallery: "Gallery", ticket: "Ticket", magazine: "Magazine", stamp: "Stamp",
             episode: "Episode", phantom: "Phantom", riso: "Riso", lcd: "LCD", stainedglass: "Glass",
-            blueprint: "Blueprint", datamosh: "Mosh", poster: "Poster"
+            blueprint: "Blueprint", datamosh: "Mosh", poster: "Poster", cards: "Cards"
         })
 
         readonly property var settingsOptions: {
@@ -168,6 +168,8 @@ ShellRoot {
                 toggles.push({ key: "foilStyle", label: "Foil: " + cap(cfg.foilStyle, "rainbow"), on: false });
             if (skinName === "sleeve")
                 toggles.push({ key: "sleeveColor", label: "Color: " + cap(cfg.sleeveColor, "art"), on: false });
+            if (skinName === "cards")
+                toggles.push({ key: "cardsHand", label: "Hand: " + cfg.cardsHand, on: false });
             // The light: every skin follows the pointer, most also drift on
             // their own (the discs don't: room light stays put).
             const skinItem = skinLoader.item;
@@ -226,6 +228,7 @@ ShellRoot {
             foilStyle: ["rainbow", "gold", "silver", "art"],
             sleeveColor: ["art", "palette"],
             stackDepth: [3, 1],
+            cardsHand: [5, 3],
             risoInks: [3, 2],
             lcdColor: ["green", "gray", "amber"],
             layer: ["overlay", "top", "bottom"]
@@ -264,7 +267,7 @@ ShellRoot {
         readonly property var flatOptions: ["pixels", "columns", "colored", "showBezel", "effect", "showStack",
                                             "holoColor", "holoMotion", "holoGlitch", "holoOpacity", "holoBase",
                                             "foilStyle", "lightMotion", "lightTilt", "sleeveColor",
-                                            "stackDepth", "risoInks", "lcdColor"]
+                                            "stackDepth", "risoInks", "lcdColor", "cardsHand"]
         function bindFlatOptions(item) {
             for (const key of flatOptions) {
                 if (item[key] !== undefined)
@@ -344,7 +347,8 @@ ShellRoot {
             "stainedglass": stainedGlassSkin,
             "blueprint": blueprintSkin,
             "datamosh": datamoshSkin,
-            "poster": posterSkin
+            "poster": posterSkin,
+            "cards": cardsSkin
         })
 
         // The window is bigger than the disc: a skin can ask for extra room
@@ -1096,6 +1100,7 @@ ShellRoot {
         Component { id: blueprintSkin; BlueprintSkin {} }
         Component { id: datamoshSkin; DatamoshSkin {} }
         Component { id: posterSkin; PosterSkin {} }
+        Component { id: cardsSkin; CardsSkin {} }
 
         // ---------------------------------------------------------------
         // Interaction
@@ -1413,6 +1418,8 @@ ShellRoot {
                 // Sleeve: its colour, "art" (the cover's), "palette" (one
                 // per track from a fixed set) or a "#rrggbb".
                 property string sleeveColor: "art"
+                // Cards: how many in the hand, joker included, 5 or 3.
+                property int cardsHand: 5
                 property bool lightMotion: true
                 property bool lightTilt: true
 

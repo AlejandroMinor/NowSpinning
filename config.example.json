@@ -3,6 +3,7 @@
     "artFull": false,
     "audioReact": true,
     "audioWave": true,
+    "cardsHand": 5,
     "colored": true,
     "columns": 32,
     "discOpacity": 1,
