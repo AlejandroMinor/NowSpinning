@@ -34,7 +34,9 @@ Item {
     // The window and its frame; room around it for the light it casts.
     readonly property real w: Math.round(size * 0.82)
     readonly property real h: Math.round(w * 1.32)
-    readonly property real pad: Math.round(size * 0.08)
+    // Room for the light it casts, blur and drift included, so the window
+    // never cuts it off in a straight line.
+    readonly property real pad: Math.round(size * 0.12)
     readonly property real frame: w * 0.07
     // The glass, inside the frame.
     readonly property real gw: w - 2 * frame
@@ -252,14 +254,14 @@ Item {
     // The colours on the wall, cast away from the light.
     MultiEffect {
         source: glass
-        x: skin.pad + skin.frame - light.lightX * skin.size * 0.07
-        y: skin.pad + skin.frame + skin.size * 0.03 - light.lightY * skin.size * 0.06
+        x: skin.pad + skin.frame - light.lightX * skin.size * 0.03
+        y: skin.pad + skin.frame + skin.size * 0.015 - light.lightY * skin.size * 0.025
         width: glass.width
         height: glass.height
-        scale: 1.12
+        scale: 1.04
         blurEnabled: true
         blur: 1
-        blurMax: 32
+        blurMax: Math.round(Math.min(64, skin.size * 0.08))
         autoPaddingEnabled: true
         saturation: 0.6
         brightness: 0.2
@@ -274,7 +276,11 @@ Item {
         y: skin.pad
         width: skin.w
         height: skin.h
-        onWidthChanged: requestPaint()
+        // Its own size spelled out, and painted again on any change: left
+        // to itself, a Canvas that grows keeps the old size's drawing,
+        // and the arch spills past the bottom.
+        canvasSize: Qt.size(width, height)
+        onCanvasSizeChanged: requestPaint()
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
@@ -297,6 +303,8 @@ Item {
         y: skin.pad + skin.frame
         width: skin.gw
         height: skin.gh
+        canvasSize: Qt.size(width, height)
+        onCanvasSizeChanged: requestPaint()
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
@@ -381,6 +389,8 @@ Item {
         y: glass.y
         width: glass.width
         height: glass.height
+        canvasSize: Qt.size(width, height)
+        onCanvasSizeChanged: requestPaint()
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
