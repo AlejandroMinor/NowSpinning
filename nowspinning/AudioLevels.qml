@@ -24,10 +24,11 @@ Item {
     readonly property bool live: levels.length > 0
     // The low end, the first few bands: what a skin pulses with.
     readonly property real bass: {
-        const n = Math.min(3, levels.length);
+        // Read once: looking up a var property from JS is far from free.
+        const L = levels, n = Math.min(3, L.length);
         let sum = 0;
         for (let i = 0; i < n; i++)
-            sum += levels[i];
+            sum += L[i];
         return n > 0 ? sum / n : 0;
     }
 

@@ -166,7 +166,8 @@ Item {
         discSize: skin.size
         cx: skin.discX
         cy: skin.discY
-        angle: spin.angle
+        // Only turned while it's there to see.
+        angle: visible ? spin.angle : 0
         playing: skin.playing
         accent: skin.accent
     }
@@ -206,8 +207,11 @@ Item {
             id: arm
             visible: skin.showArm
             discSize: skin.size
-            down: skin.playing
-            progress: skin.progress
+            // Hidden, it follows nothing: its glides would run every frame
+            // for no one. Shown again, it drops onto the record and glides
+            // to the track, as on play.
+            down: skin.playing && visible
+            progress: visible ? skin.progress : 0
             showBase: skin.showDeck
             baseRing: deck.platterMetal
             pivotDistance: skin.showDeck ? 1.30 : 1.02

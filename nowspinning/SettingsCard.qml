@@ -51,6 +51,10 @@ PopupWindow {
             Qt.callLater(() => anchor.updateAnchor());
     }
     onFaceChanged: reanchor()
+    // And when the card itself changes height (a tab, a group, the
+    // previews loading in): its middle has to stay level with the widget.
+    onImplicitHeightChanged: reanchor()
+    onVisibleChanged: reanchor()
     color: "transparent"
     implicitWidth: columns * tile + (columns - 1) * 6 + 28
     implicitHeight: content.implicitHeight + 28

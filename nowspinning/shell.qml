@@ -594,6 +594,27 @@ ShellRoot {
             : dockY > 0 ? (screen ? screen.height : 1080) - boxH
             : place(posY, (screen ? screen.height : 1080) - boxH)
 
+        // The CD's box keeps room on its peek side for the disc to slide
+        // out, so pushed against that edge the case itself stopped short of
+        // it: a gap the size of the disc, and the corner out of reach. Flush
+        // against the edge on that side, the disc comes out the other way
+        // instead, toward the screen, and the case sits in the corner. The
+        // box doesn't change size, only what's drawn inside it. Docked, the
+        // side picked stays: the hidden sliver is built around it.
+        readonly property string peekSide: {
+            const side = cfg.peekSide;
+            if (docked)
+                return side;
+            const sw = screen ? screen.width : 1920;
+            const sh = screen ? screen.height : 1080;
+            const near = 2;
+            if (side === "right" && placedX >= sw - boxW - near) return "left";
+            if (side === "left" && placedX <= near) return "right";
+            if (side === "bottom" && placedY >= sh - boxH - near) return "top";
+            if (side === "top" && placedY <= near) return "bottom";
+            return side;
+        }
+
         // Only the trip to the edge on docking is animated. During a drag
         // the position is already being driven a frame at a time, and
         // easing it there would just add lag on top of the compositor's own.
@@ -843,7 +864,7 @@ ShellRoot {
                                 if (item.revealed !== undefined)
                                     item.revealed = Qt.binding(() => win.flipped);
                                 if (item.peekSide !== undefined)
-                                    item.peekSide = Qt.binding(() => cfg.peekSide);
+                                    item.peekSide = Qt.binding(() => win.peekSide);
                                 if (item.progress !== undefined)
                                     item.progress = Qt.binding(() => source.progress);
                                 if (item.duration !== undefined)
@@ -982,7 +1003,7 @@ ShellRoot {
                     preview: win.ringPreview
                     color: win.accentStroke
                     waves: 14
-                    levels: audio.levels
+                    levels: visible ? audio.levels : []
 
                     // The wave travels while playing and flattens on pause.
                     // When the style is "bar" this isn't even drawn, so
@@ -1013,7 +1034,8 @@ ShellRoot {
                     source: source
                     shown: win.controlsOpen && !win.collapsed && !win.flipped
                     showProgress: !win.ringStyle
-                    levels: audio.levels
+                    // Closed, the bar isn't drawn: no levels to pass along.
+                    levels: shown && showProgress ? audio.levels : []
                 }
             }
         }

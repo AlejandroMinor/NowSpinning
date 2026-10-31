@@ -18,6 +18,7 @@
 // Around the ring the bands run out from the top both ways, lows at 12
 // o'clock; along the bar, lows on the left.
 import QtQuick
+import QtQuick.Shapes
 
 Item {
     id: ring
@@ -56,15 +57,29 @@ Item {
         return levels[i] + (levels[j] - levels[i]) * (f - i);
     }
 
-    onProgressChanged: cv.requestPaint()
-    onAmplitudeChanged: cv.requestPaint()
-    onPhaseChanged: cv.requestPaint()
-    onRadiusChanged: cv.requestPaint()
-    onLinearChanged: cv.requestPaint()
-    onWidthChanged: cv.requestPaint()
-    onPreviewChanged: cv.requestPaint()
-    onColorChanged: cv.requestPaint()
-    onLevelsChanged: cv.requestPaint()
+    // While the wave flows, its tick repaints 30 times a second anyway, so
+    // a new level (cava sends 30 a second too) or a step of progress waits
+    // for it: one paint per frame instead of two or three out of step. And
+    // nothing paints while hidden (the controls' bar, most of the time): a
+    // hidden Canvas still paints when asked. It catches up on showing.
+    function repaint() {
+        if (visible)
+            cv.requestPaint();
+    }
+    function step() {
+        if (!flowing)
+            repaint();
+    }
+    onVisibleChanged: repaint()
+    onProgressChanged: step()
+    onAmplitudeChanged: step()
+    onPhaseChanged: repaint()
+    onRadiusChanged: repaint()
+    onLinearChanged: repaint()
+    onWidthChanged: repaint()
+    onPreviewChanged: repaint()
+    onColorChanged: repaint()
+    onLevelsChanged: step()
 
     // The point `t` (0..1) of the way along the path, on its axis: no wave.
     function pointAt(t) {
@@ -113,76 +128,100 @@ Item {
         }
     }
 
-    Canvas {
+    // The wave as a Shape, traced on the GPU by the curve renderer: drawn
+    // in a Canvas it was rasterised on the CPU and uploaded 30 times a
+    // second, the most expensive thing on screen. Same stroke, same round
+    // ends. Rebuilt at most once per frame, whatever asked for it.
+    QtObject {
         id: cv
-        anchors.fill: parent
-
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.reset();
-
-            const tau = Math.PI * 2;
-
-            if (ring.preview >= 0) {
-                const at = ring.pointAt(ring.preview);
-                ctx.beginPath();
-                ctx.arc(at.x, at.y, Math.max(3, ring.headRadius * 1.6), 0, tau);
-                ctx.lineWidth = Math.max(1, ring.thickness * 0.8);
-                ctx.strokeStyle = ring.color;
-                ctx.stroke();
-            }
-
-            const p = Math.max(0, Math.min(1, ring.progress));
-            if (p <= 0)
+        property bool pending: false
+        function requestPaint() {
+            if (pending)
                 return;
-
-            // Total path length: the circumference, or the width.
-            const span = ring.linear ? width - 2 * ring.headRadius
-                                     : ring.radius * tau;
-
-            // One segment per 3px of path: below that the curve gains
-            // nothing and just costs more.
+            pending = true;
+            Qt.callLater(rebuild);
+        }
+        function rebuild() {
+            pending = false;
+            const tau = Math.PI * 2;
+            const p = Math.max(0, Math.min(1, ring.progress));
+            if (p <= 0) {
+                poly.path = [];
+                head.visible = false;
+                return;
+            }
+            const span = ring.linear ? ring.width - 2 * ring.headRadius : ring.radius * tau;
             const steps = Math.max(2, Math.ceil(span * p / 3));
-
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.lineWidth = ring.thickness;
-            ctx.strokeStyle = ring.color;
-            ctx.beginPath();
-
-            const heard = ring.levels.length > 0;
+            const L = ring.levels, n = L.length, heard = n > 0;
+            const linear = ring.linear, amp = ring.amplitude, phase = ring.phase;
+            const waves = ring.waves, headR = ring.headRadius, radius = ring.radius;
+            const cx = ring.width / 2, cy = ring.height / 2;
+            const pts = new Array(steps + 1);
             let hx = 0, hy = 0;
             for (let i = 0; i <= steps; i++) {
                 const t = p * (i / steps);
-                const k = t * tau * ring.waves;
-                const swing = heard
-                    ? ring.amplitude * (0.3 + 1.6 * ring.levelAt(t))
-                        * (0.7 * Math.sin(k - ring.phase) + 0.3 * Math.sin(k * 2.7 + ring.phase * 2))
-                    : ring.amplitude * Math.sin(k - ring.phase);
-
-                if (ring.linear) {
-                    hx = ring.headRadius + t * span;
-                    hy = height / 2 + swing;
+                const k = t * tau * waves;
+                let swing;
+                if (heard) {
+                    const u = linear ? t : 1 - Math.abs(2 * t - 1);
+                    const f = Math.max(0, Math.min(n - 1, u * (n - 1)));
+                    const a = Math.floor(f), b = Math.min(n - 1, a + 1);
+                    const level = L[a] + (L[b] - L[a]) * (f - a);
+                    swing = amp * (0.3 + 1.6 * level)
+                        * (0.7 * Math.sin(k - phase) + 0.3 * Math.sin(k * 2.7 + phase * 2));
                 } else {
-                    const angle = -Math.PI / 2 + t * tau;   // starts at 12 o'clock
-                    const rr = ring.radius + swing;
-                    hx = width / 2 + rr * Math.cos(angle);
-                    hy = height / 2 + rr * Math.sin(angle);
+                    swing = amp * Math.sin(k - phase);
                 }
-
-                if (i === 0)
-                    ctx.moveTo(hx, hy);
-                else
-                    ctx.lineTo(hx, hy);
+                if (linear) {
+                    hx = headR + t * span;
+                    hy = cy + swing;
+                } else {
+                    const angle = -Math.PI / 2 + t * tau;
+                    const rr = radius + swing;
+                    hx = cx + rr * Math.cos(angle);
+                    hy = cy + rr * Math.sin(angle);
+                }
+                pts[i] = Qt.point(hx, hy);
             }
-            ctx.stroke();
-
-            if (ring.headRadius > 0) {
-                ctx.beginPath();
-                ctx.arc(hx, hy, ring.headRadius, 0, tau);
-                ctx.fillStyle = ring.color;
-                ctx.fill();
-            }
+            poly.path = pts;
+            head.x = hx - headR;
+            head.y = hy - headR;
+            head.visible = headR > 0;
         }
+    }
+
+    Shape {
+        anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            strokeColor: ring.color
+            strokeWidth: ring.thickness
+            fillColor: "transparent"
+            capStyle: ShapePath.RoundCap
+            joinStyle: ShapePath.RoundJoin
+            PathPolyline { id: poly }
+        }
+    }
+    Rectangle {
+        id: head
+        visible: false
+        width: ring.headRadius * 2
+        height: width
+        radius: width / 2
+        color: ring.color
+        antialiasing: true
+    }
+    Rectangle {
+        readonly property real r: Math.max(3, ring.headRadius * 1.6)
+        readonly property point at: ring.preview >= 0 ? ring.pointAt(ring.preview) : Qt.point(0, 0)
+        visible: ring.preview >= 0
+        x: at.x - r
+        y: at.y - r
+        width: r * 2
+        height: width
+        radius: r
+        color: "transparent"
+        border { width: Math.max(1, ring.thickness * 0.8); color: ring.color }
+        antialiasing: true
     }
 }
