@@ -29,8 +29,19 @@ Canvas {
     // enough.
     property string sampledFrom: ""
 
+    // The cover this Canvas holds. A Canvas keeps every image it loads
+    // until told to drop it: a cover per track, at full size, for as long
+    // as the widget runs. Only the current one is kept.
+    property string held: ""
+    function hold(url) {
+        if (held !== "" && held !== url)
+            unloadImage(held);
+        held = url;
+    }
+
     function load() {
         sampledFrom = "";
+        hold(source);
         if (!source) {
             pixels = [];
             sampled();

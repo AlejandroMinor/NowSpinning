@@ -85,7 +85,13 @@ Item {
         }
     }
 
+    // The cover the sampler holds: a Canvas keeps every image it loads until
+    // told to drop it, so only the current one is kept.
+    property string held: ""
     function load() {
+        if (held !== "" && held !== artUrl)
+            sampler.unloadImage(held);
+        held = artUrl;
         if (!artUrl)
             return;
         if (sampler.isImageLoaded(artUrl))
