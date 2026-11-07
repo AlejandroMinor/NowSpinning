@@ -17,6 +17,9 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    # Nothing here takes long: a widget that hangs fails it instead of
+    # holding the runner for hours.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:
@@ -43,17 +46,20 @@ jobs:
           "number=$number" >> $env:GITHUB_OUTPUT
 
       - name: Build the package
+        timeout-minutes: 15
         shell: pwsh
         run: packaging/windows/build.ps1 -Version ${{ steps.version.outputs.number }}
 
       # From here on, as a user runs it: no Qt and no compiler in the PATH.
       - name: Open it, and every skin
+        timeout-minutes: 10
         shell: pwsh
         run: packaging/windows/smoke.ps1 dist/NowSpinning -Demo -Shots screenshots -Forbidden $env:QT_ROOT_DIR
 
       # A real media session, as Spotify or a browser opens one: the widget
       # has to name it in its log.
       - name: See a player
+        timeout-minutes: 5
         shell: pwsh
         run: |
           $session = Start-Process powershell.exe -ArgumentList "-NoProfile", "-File", "packaging/windows/session.ps1", "-Title", "SmokeTest", "-Artist", "NowSpinning", "-Seconds", "60" -PassThru
@@ -83,6 +89,7 @@ jobs:
         run: Compress-Archive -Path dist/NowSpinning -DestinationPath "dist/NowSpinning-$env:VERSION-windows-portable.zip"
 
       - name: Make the installer
+        timeout-minutes: 10
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.number }}
@@ -93,6 +100,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
       - name: Install, open and uninstall
+        timeout-minutes: 10
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.number }}
