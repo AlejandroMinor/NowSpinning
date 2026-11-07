@@ -26,7 +26,8 @@ jobs:
         with:
           version: "6.10.*"
           arch: win64_msvc2022_64
-          modules: qt5compat
+          # Qt 5 Compatibility's graphical effects need the shader tools.
+          modules: qt5compat qtshadertools
           cache: true
 
       # The compiler, and the CMake and Ninja that come with it.

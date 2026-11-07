@@ -48,9 +48,10 @@ QString store(const QByteArray& bytes, const QString& contentType) {
     QFile file(path);
     if (file.exists()) {
         // Kept among the newest, not pruned as an old one.
-        file.open(QIODevice::ReadWrite);
-        file.setFileTime(QDateTime::currentDateTime(), QFileDevice::FileModificationTime);
-        file.close();
+        if (file.open(QIODevice::ReadWrite)) {
+            file.setFileTime(QDateTime::currentDateTime(), QFileDevice::FileModificationTime);
+            file.close();
+        }
     } else {
         if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size())
             return QString();
@@ -144,7 +145,12 @@ private:
         QBuffer buffer(&bytes);
         buffer.open(QIODevice::WriteOnly);
         image.save(&buffer, "PNG");
-        m_state.artUrl = ArtCache::store(bytes, QStringLiteral("image/png"));
+        // NOWSPINNING_DEMO set to a picture: that one as the cover, a real
+        // one with detail in it, for skins that need some to show.
+        QFile picture(qEnvironmentVariable("NOWSPINNING_DEMO"));
+        if (picture.open(QIODevice::ReadOnly))
+            bytes = picture.readAll();
+        m_state.artUrl = ArtCache::store(bytes);
     }
 
     void publish() { Q_EMIT updated({m_state}); }

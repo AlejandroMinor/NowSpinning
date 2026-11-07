@@ -1,7 +1,8 @@
 // Where the players come from. On Windows, its media controls (the same
 // sessions the volume flyout shows: Spotify, browsers, most players); on
 // other systems nothing, unless NOWSPINNING_DEMO is set, which plays a
-// made-up track for trying the widget without a player.
+// made-up track for trying the widget without a player (with the picture
+// it names as the cover, if it names one).
 #pragma once
 
 #include <QByteArray>
