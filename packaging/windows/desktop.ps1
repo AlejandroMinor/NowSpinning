@@ -84,13 +84,15 @@ try {
     $rect = [Desk]::WindowOf([uint32]$widget.Id)
     Write-Host "widget window: $($rect.Left),$($rect.Top) to $($rect.Right),$($rect.Bottom)"
     if ($rect.Right -le $rect.Left) { throw "no visible widget window" }
-    $cx = [int](($rect.Left + $rect.Right) / 2)
+    # On the record's grooves, off its center: the spindle hole shows
+    # what's behind, as a real one would.
+    $cx = [int](($rect.Left + $rect.Right) / 2 + ($rect.Right - $rect.Left) * 0.2)
     $cy = [int](($rect.Top + $rect.Bottom) / 2)
     $edgeX = $rect.Left + 4
     $edgeY = $rect.Top + 4
 
     # Above the backdrop, see-through around the disc.
-    $center = Get-Pixel $cx $cy; Show "center, on top" $center
+    $center = Get-Pixel $cx $cy; Show "disc, on top" $center
     $edge = Get-Pixel $edgeX $edgeY; Show "corner, on top" $edge
     if (Test-Magenta $center) { $failures += "the widget isn't drawn above other windows" }
     if (-not (Test-Magenta $edge)) { $failures += "the widget's corner isn't see-through" }
@@ -108,10 +110,10 @@ try {
 
     # "bottom": behind the backdrop, then back on top, applied live.
     Set-Layer "bottom"; Start-Sleep -Seconds 3
-    $center = Get-Pixel $cx $cy; Show "center, on bottom" $center
+    $center = Get-Pixel $cx $cy; Show "disc, on bottom" $center
     if (-not (Test-Magenta $center)) { $failures += "on the bottom layer the widget stays above other windows" }
     Set-Layer "overlay"; Start-Sleep -Seconds 3
-    $center = Get-Pixel $cx $cy; Show "center, back on top" $center
+    $center = Get-Pixel $cx $cy; Show "disc, back on top" $center
     if (Test-Magenta $center) { $failures += "back on the overlay layer the widget stays behind" }
 } finally {
     & $exe --quit

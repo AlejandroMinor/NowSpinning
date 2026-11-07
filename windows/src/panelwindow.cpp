@@ -29,6 +29,15 @@ bool setClickThroughNative(QWindow* window, bool through) {
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, next);
     return true;
 }
+
+// Puts the window above every other one ("overlay", "top") or below them
+// ("bottom"), now. Qt only changes the flag: a window already behind the
+// others stays there when it becomes always on top, until it's raised.
+void setStackingNative(QWindow* window, bool onTop) {
+    const HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    SetWindowPos(hwnd, onTop ? HWND_TOPMOST : HWND_BOTTOM, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+}
 #endif
 
 // How often the pointer is checked against a window's mask. Fast enough
@@ -90,6 +99,9 @@ void ProxyWindow::applyVisible() {
     if (m_visible) {
         applyGeometry();
         m_window->setVisible(true);
+#ifdef Q_OS_WIN
+        setStackingNative(m_window, m_layer >= WlrLayer::Top);
+#endif
         m_clickThroughKnown = false;
         updateInput();
     } else {
@@ -215,6 +227,10 @@ void ProxyWindow::applyFlags() {
         // Setting the flags again may have reset the native click-through.
         m_clickThroughKnown = false;
         updateInput();
+#ifdef Q_OS_WIN
+        if (m_window->isVisible())
+            setStackingNative(m_window, m_layer >= WlrLayer::Top);
+#endif
     }
 }
 
