@@ -1247,54 +1247,23 @@ ShellRoot {
         // was, which is what made the drag feel unpredictable.
         //
         // On Hyprland none of that is needed: its request socket says where
-        // the cursor really is on screen, and the widget goes straight to
-        // that minus the point it was grabbed by. No feedback, so nothing to
-        // overshoot and bounce back, and it tracks 1:1 like any floating
-        // window. Asked once per frame; a reply takes a few hundredths of a
-        // millisecond. Elsewhere the env vars are unset and the damped
-        // correction below is what runs.
-        readonly property string hyprSocket: {
-            const sig = Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE");
-            const run = Quickshell.env("XDG_RUNTIME_DIR");
-            return sig && run ? run + "/hypr/" + sig + "/.socket.sock" : "";
-        }
-
-        Socket {
-            id: cursorSocket
-            path: win.hyprSocket
-            property string reply: ""
-
-            // Hyprland answers once and hangs up, so every request is a
-            // fresh connection.
-            onConnectionStateChanged: {
-                if (connected) {
-                    reply = "";
-                    write("j/cursorpos");
-                    flush();
-                }
-            }
-
-            parser: SplitParser {
-                splitMarker: ""
-                onRead: (data) => {
-                    cursorSocket.reply += data;
-                    const m = cursorSocket.reply.match(/"x":\s*(-?\d+)[\s\S]*"y":\s*(-?\d+)/);
-                    if (!m)
-                        return;
-                    // Hyprland hangs up after every reply, which Quickshell
-                    // logs as a socket error: sixty a second while dragging.
-                    // Hanging up first catches some; the logging rule in
-                    // the pragma at the top silences the rest.
-                    cursorSocket.connected = false;
-                    if (!dragger.active || !win.screen)
-                        return;
-                    const sw = win.screen.width;
-                    const sh = win.screen.height;
-                    win.posX = Math.max(0, Math.min(sw - win.boxW,
-                        Number(m[1]) - win.screen.x - dragger.grab.x));
-                    win.posY = Math.max(0, Math.min(sh - win.boxH,
-                        Number(m[2]) - win.screen.y - dragger.grab.y));
-                }
+        // the cursor really is on screen (see CursorProbe.qml), and the
+        // widget goes straight to that minus the point it was grabbed by. No
+        // feedback, so nothing to overshoot and bounce back, and it tracks
+        // 1:1 like any floating window. Asked once per frame; a reply takes
+        // a few hundredths of a millisecond. Elsewhere there's no one to ask
+        // and the damped correction below is what runs.
+        CursorProbe {
+            id: cursorProbe
+            onMoved: (cursorX, cursorY) => {
+                if (!dragger.active || !win.screen)
+                    return;
+                const sw = win.screen.width;
+                const sh = win.screen.height;
+                win.posX = Math.max(0, Math.min(sw - win.boxW,
+                    cursorX - win.screen.x - dragger.grab.x));
+                win.posY = Math.max(0, Math.min(sh - win.boxH,
+                    cursorY - win.screen.y - dragger.grab.y));
             }
         }
 
@@ -1302,9 +1271,8 @@ ShellRoot {
             id: stepper
             running: dragger.active
             onTriggered: {
-                if (win.hyprSocket !== "") {
-                    if (!cursorSocket.connected)
-                        cursorSocket.connected = true;
+                if (cursorProbe.available) {
+                    cursorProbe.ask();
                     return;
                 }
                 const sw = win.screen ? win.screen.width : 1920;
