@@ -33,13 +33,17 @@ add_executable(nowspinning WIN32
     shim.qrc
 )
 
-# Players and sound: none yet, only the demo with NOWSPINNING_DEMO.
-target_sources(nowspinning PRIVATE src/media_other.cpp src/audio_other.cpp)
 if(WIN32)
+    target_sources(nowspinning PRIVATE src/media_windows.cpp src/audio_windows.cpp)
     target_compile_definitions(nowspinning PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE)
+    target_link_libraries(nowspinning PRIVATE windowsapp ole32 uuid)
     if(MSVC)
-        target_compile_options(nowspinning PRIVATE /EHsc /permissive- /utf-8)
+        # C++/WinRT wants exceptions with their full semantics, and its
+        # headers are big.
+        target_compile_options(nowspinning PRIVATE /EHsc /bigobj /permissive- /utf-8)
     endif()
+else()
+    target_sources(nowspinning PRIVATE src/media_other.cpp src/audio_other.cpp)
 endif()
 
 target_compile_definitions(nowspinning PRIVATE
