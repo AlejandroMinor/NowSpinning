@@ -32,10 +32,13 @@ PopupWindow {
     readonly property int tile: 60
     readonly property int columns: 5
 
+    // The whole face, 10 px wider on each side: beside its right edge,
+    // or flipped, beside its left one. A sliver right of the face would
+    // flip onto the face itself, covering the widget.
     anchor.window: host
-    anchor.rect.x: face.x + face.width + 10
+    anchor.rect.x: face.x - 10
     anchor.rect.y: face.y + face.height / 2
-    anchor.rect.width: 1
+    anchor.rect.width: face.width + 20
     anchor.rect.height: 1
     anchor.edges: Edges.Right
     anchor.gravity: Edges.Right
