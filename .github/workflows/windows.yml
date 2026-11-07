@@ -1,0 +1,121 @@
+name: Windows
+
+# Builds nowspinning.exe, its portable zip and its installer, and tries them
+# on a real Windows: the widget opens, every skin loads, a player's session
+# shows up, and the installer installs, opens and uninstalls it. A published
+# release gets the zip and the installer attached, as the Arch package is.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.10.*"
+          arch: win64_msvc2022_64
+          modules: qt5compat
+          cache: true
+
+      # The compiler, and the CMake and Ninja that come with it.
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Name the version
+        id: version
+        shell: pwsh
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $number = if ($env:TAG -match '^v(\d+\.\d+\.\d+)$') { $Matches[1] } else { "0.0.0" }
+          "number=$number" >> $env:GITHUB_OUTPUT
+
+      - name: Build the package
+        shell: pwsh
+        run: packaging/windows/build.ps1 -Version ${{ steps.version.outputs.number }}
+
+      # From here on, as a user runs it: no Qt and no compiler in the PATH.
+      - name: Open it, and every skin
+        shell: pwsh
+        run: packaging/windows/smoke.ps1 dist/NowSpinning -Demo -Shots screenshots -Forbidden $env:QT_ROOT_DIR
+
+      # A real media session, as Spotify or a browser opens one: the widget
+      # has to name it in its log.
+      - name: See a player
+        shell: pwsh
+        run: |
+          $session = Start-Process powershell.exe -ArgumentList "-NoProfile", "-File", "packaging/windows/session.ps1", "-Title", "Smoke Test", "-Seconds", "60" -PassThru
+          Start-Sleep -Seconds 5
+          $env:NOWSPINNING_CONFIG_DIR = Join-Path $env:RUNNER_TEMP "nowspinning-session"
+          $widget = Start-Process dist/NowSpinning/nowspinning.exe -PassThru
+          Start-Sleep -Seconds 10
+          dist/NowSpinning/nowspinning.exe --quit
+          $widget.WaitForExit(15000) | Out-Null
+          $session | Stop-Process -ErrorAction SilentlyContinue
+          $log = Get-Content "$env:LOCALAPPDATA\nowspinning\nowspinning.log"
+          $log
+          if (-not ($log -match "Smoke Test")) { throw "nowspinning did not see the media session" }
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nowspinning-on-windows
+          path: screenshots
+          if-no-files-found: warn
+
+      - name: Make the portable zip
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+        run: Compress-Archive -Path dist/NowSpinning -DestinationPath "dist/NowSpinning-$env:VERSION-windows-portable.zip"
+
+      - name: Make the installer
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe"
+          if (-not (Test-Path $compiler)) { choco install innosetup -y --no-progress }
+          & $compiler "/DAppVersion=$env:VERSION" packaging\windows\nowspinning.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Install, open and uninstall
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+        run: |
+          Start-Process "dist/NowSpinning-$env:VERSION-setup.exe" -ArgumentList "/VERYSILENT", "/CURRENTUSER", "/NORESTART" -Wait
+          $installed = "$env:LOCALAPPDATA\Programs\NowSpinning"
+          packaging/windows/smoke.ps1 $installed
+          Start-Process "$installed\unins000.exe" -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+          Start-Sleep -Seconds 5
+          if (Test-Path "$installed\nowspinning.exe") { throw "the uninstaller left nowspinning.exe" }
+
+      - name: Keep the files
+        uses: actions/upload-artifact@v7
+        with:
+          name: nowspinning-windows
+          path: |
+            dist/*.exe
+            dist/*.zip
+          if-no-files-found: error
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload $env:TAG (Get-ChildItem dist -File).FullName --repo $env:GITHUB_REPOSITORY --clobber

@@ -35,6 +35,8 @@ add_executable(nowspinning WIN32
 
 if(WIN32)
     target_sources(nowspinning PRIVATE src/media_windows.cpp src/audio_windows.cpp)
+    configure_file(nowspinning.rc.in ${CMAKE_CURRENT_BINARY_DIR}/nowspinning.rc @ONLY)
+    target_sources(nowspinning PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/nowspinning.rc)
     target_compile_definitions(nowspinning PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE)
     target_link_libraries(nowspinning PRIVATE windowsapp ole32 uuid)
     if(MSVC)
