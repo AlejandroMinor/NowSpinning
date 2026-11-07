@@ -86,16 +86,17 @@ try {
     if ($rect.Right -le $rect.Left) { throw "no visible widget window" }
     $cx = [int](($rect.Left + $rect.Right) / 2)
     $cy = [int](($rect.Top + $rect.Bottom) / 2)
-    $corner = @($rect.Left + 4, $rect.Top + 4)
+    $edgeX = $rect.Left + 4
+    $edgeY = $rect.Top + 4
 
     # Above the backdrop, see-through around the disc.
     $center = Get-Pixel $cx $cy; Show "center, on top" $center
-    $edge = Get-Pixel $corner[0] $corner[1]; Show "corner, on top" $edge
+    $edge = Get-Pixel $edgeX $edgeY; Show "corner, on top" $edge
     if (Test-Magenta $center) { $failures += "the widget isn't drawn above other windows" }
     if (-not (Test-Magenta $edge)) { $failures += "the widget's corner isn't see-through" }
 
     # Clicks: through the corner to the backdrop, but not through the disc.
-    [Desk]::Click($corner[0], $corner[1]); Start-Sleep -Milliseconds 700
+    [Desk]::Click($edgeX, $edgeY); Start-Sleep -Milliseconds 700
     $through = @(Get-Content $clicks).Count
     Write-Host "clicks on the corner that reached the backdrop: $through"
     if ($through -lt 1) { $failures += "a click on the widget's see-through corner didn't go through" }
