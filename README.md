@@ -1,6 +1,6 @@
 # NowSpinning
 
-A floating MPRIS widget for Hyprland, built on Quickshell. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card, a risograph print, a four-tone LCD, a stained glass window, a blueprint) or a cyberpunk one (a HUD panel, a data shard, a neon sign, a neon disc, digital rain, a terminal, a datamoshed video), or something with more style (a jazz session title card, a hard-bop record sleeve, an art deco frame, a gallery frame, a concert ticket, a magazine cover, a postage stamp, a gig poster pasted on a wall, a poker hand with the cover on the joker) or an anime one (an episode title card, a phantom thief's calling card), with transport controls a click away.
+A floating MPRIS widget for Hyprland, built on Quickshell, and the same widget on Windows. Shows the current track as a spinning physical-media skin, a vinyl record, a CD, a cassette, a MiniDisc, a portable cassette player, a 7" single, or one of a few flat takes on the cover itself (an old CRT, ASCII art, pixel art, a Polaroid, a hologram, a foil trading card, a risograph print, a four-tone LCD, a stained glass window, a blueprint) or a cyberpunk one (a HUD panel, a data shard, a neon sign, a neon disc, digital rain, a terminal, a datamoshed video), or something with more style (a jazz session title card, a hard-bop record sleeve, an art deco frame, a gallery frame, a concert ticket, a magazine cover, a postage stamp, a gig poster pasted on a wall, a poker hand with the cover on the joker) or an anime one (an episode title card, a phantom thief's calling card), with transport controls a click away.
 
 ![Every skin, playing the same track](docs/skins.webp)
 
@@ -76,6 +76,20 @@ end)
 If you don't have that block yet, the whole thing is what goes in your config. On a plain `hyprland.conf` setup, the equivalent is `exec-once = nowspinning`.
 
 Optionally, bind a key to `nowspinning` in your Hyprland keybindings for a manual toggle.
+
+### On Windows
+
+Download `NowSpinning-<version>-setup.exe` from the [latest release](https://github.com/AlejandroMinor/NowSpinning/releases/latest) and run it. It installs for your user alone, without asking for an administrator, adds NowSpinning to the Start menu and, if you tick it, starts it with Windows. Or take `NowSpinning-<version>-windows-portable.zip` instead, unzip it anywhere and run `nowspinning.exe` from there. Windows 10 1809 or newer, 64-bit. Neither is signed, so the first time SmartScreen may stop it: *More info*, then *Run anyway*.
+
+It's the same widget, the same QML and the same skins, run by `nowspinning.exe`, a small Qt program that brings what Quickshell brings on Linux. Like the `nowspinning` command, it's a toggle: starting it again from the Start menu closes it. What's different:
+
+- **Players**: whatever shows up in Windows' own media controls, the flyout by the volume: Spotify, the browsers, most players. `preferredPlayer` takes the same names as on Linux, made from the player's app: Spotify is still `org.mpris.MediaPlayer2.spotify`, Chrome `org.mpris.MediaPlayer2.chrome`, Edge `org.mpris.MediaPlayer2.msedge`. The log lists each player under the name it got.
+- **Volume**: scrolling over the widget sets the player's own volume in the Windows volume mixer.
+- **The audio wave** and the skins that pulse with the beat listen to what the speakers are playing, through Windows itself: there's no `cava` to install.
+- **Config**: `%APPDATA%\nowspinning\config.json`, with the same keys. `monitor` takes the names Windows gives its monitors, `DISPLAY1`, `DISPLAY2`... `layer` is `"overlay"` or `"top"` for always on top, `"bottom"` for always behind other windows. The widget places itself, and docks, within the part of the screen the taskbar leaves free. Dragging tracks the cursor 1:1, so `dragGain` isn't used.
+- **Log**: `%LOCALAPPDATA%\nowspinning\nowspinning.log`, started fresh each time, for when something doesn't work.
+
+To build it yourself: Visual Studio 2022 and Qt 6.5 or newer for MSVC, with the Qt 5 Compatibility module. From a Developer PowerShell, with Qt's `bin` folder on the `PATH`, `packaging\windows\build.ps1` leaves it in `dist\NowSpinning`. The program is in `windows/`; next to the widget's own QML, `nowspinning/+windows/` holds the two files that take the place of Linux-only ones on Windows (the audio levels and the cursor). Quickshell never reads that folder.
 
 ## Config
 
@@ -153,7 +167,7 @@ qs kill -c nowspinning
 
 Works with any MPRIS-compliant player exposed on the session D-Bus. Developed and tested against Spotify. `playerctld` is filtered out specifically, since it's a proxy for other players and would show up as a duplicate entry.
 
-Developed and tested only on Hyprland, on Arch. Only one thing calls Hyprland specifically, and it's optional: while dragging, its request socket says where the cursor is, so the widget tracks it 1:1 (see Limitations). Everything else is placed with `Quickshell.Wayland`, against the `wlr-layer-shell` protocol, which any wlroots-based compositor implements (Sway, river, and others). It should run there the same way, down to the `monitor` config value, which is just a connector name like `hyprctl monitors` reports, the same kind of name `swaymsg -t get_outputs` reports on Sway. Wayland only, not X11: there's no fallback for compositors or sessions without a layer-shell implementation, GNOME's among them.
+Developed and tested only on Hyprland, on Arch. Only one thing calls Hyprland specifically, and it's optional: while dragging, its request socket says where the cursor is, so the widget tracks it 1:1 (see Limitations). Everything else is placed with `Quickshell.Wayland`, against the `wlr-layer-shell` protocol, which any wlroots-based compositor implements (Sway, river, and others). It should run there the same way, down to the `monitor` config value, which is just a connector name like `hyprctl monitors` reports, the same kind of name `swaymsg -t get_outputs` reports on Sway. Wayland only, not X11: there's no fallback for compositors or sessions without a layer-shell implementation, GNOME's among them. On Windows it runs without any of that; see [On Windows](#on-windows).
 
 ## Limitations
 
