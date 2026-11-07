@@ -51,9 +51,10 @@ Item {
     readonly property real u: implicitWidth / 240
     readonly property int fontPx: Math.max(6, Math.round(10 * u))
 
-    FileView { id: hostname; path: "/etc/hostname" }
-    readonly property string prompt: (Quickshell.env("USER") || "user") + "@"
-        + (hostname.text().trim() || "localhost") + " $ "
+    // Windows has neither /etc/hostname nor USER: there, its own names.
+    FileView { id: hostname; path: "/etc/hostname"; printErrors: false }
+    readonly property string prompt: (Quickshell.env("USER") || Quickshell.env("USERNAME") || "user") + "@"
+        + (hostname.text().trim() || String(Quickshell.env("COMPUTERNAME") || "localhost").toLowerCase()) + " $ "
 
     LightDriver {
         id: light

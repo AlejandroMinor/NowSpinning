@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/shim">
+        <file alias="ShellRoot.qml">shim/ShellRoot.qml</file>
+        <file alias="ClippingRectangle.qml">shim/ClippingRectangle.qml</file>
+    </qresource>
+</RCC>
