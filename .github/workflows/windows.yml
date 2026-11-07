@@ -56,7 +56,7 @@ jobs:
       - name: See a player
         shell: pwsh
         run: |
-          $session = Start-Process powershell.exe -ArgumentList "-NoProfile", "-File", "packaging/windows/session.ps1", "-Title", "Smoke Test", "-Seconds", "60" -PassThru
+          $session = Start-Process powershell.exe -ArgumentList "-NoProfile", "-File", "packaging/windows/session.ps1", "-Title", "SmokeTest", "-Artist", "NowSpinning", "-Seconds", "60" -PassThru
           Start-Sleep -Seconds 5
           $env:NOWSPINNING_CONFIG_DIR = Join-Path $env:RUNNER_TEMP "nowspinning-session"
           $widget = Start-Process dist/NowSpinning/nowspinning.exe -PassThru
@@ -66,7 +66,7 @@ jobs:
           $session | Stop-Process -ErrorAction SilentlyContinue
           $log = Get-Content "$env:LOCALAPPDATA\nowspinning\nowspinning.log"
           $log
-          if (-not ($log -match "Smoke Test")) { throw "nowspinning did not see the media session" }
+          if (-not ($log -match "SmokeTest by NowSpinning")) { throw "nowspinning did not see the media session" }
 
       - name: Keep the screenshots
         if: always()
