@@ -74,6 +74,14 @@ jobs:
           $log
           if (-not ($log -match "SmokeTest by NowSpinning")) { throw "nowspinning did not see the media session" }
 
+      # What it's for: floating above the other windows, see-through around
+      # the disc with clicks going through there, and behind them on
+      # "bottom", checked on screen against a magenta window behind it.
+      - name: On top, see-through, and behind
+        timeout-minutes: 5
+        shell: pwsh
+        run: packaging/windows/desktop.ps1 dist/NowSpinning
+
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@v7
